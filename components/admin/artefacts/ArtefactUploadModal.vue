@@ -247,8 +247,8 @@
                 </UInputMenu>
               </UFormGroup>
 
-              <!-- Google Drive URL -->
-              <UFormGroup label="Google drive public URL">
+              <!-- Method 1: Google Drive URL -->
+              <UFormGroup label="Option 1: Google Drive Public URL">
                 <div class="flex space-x-2">
                   <input
                     v-model="googleDriveState.url"
@@ -265,17 +265,29 @@
                   >
                     Fetch Files
                   </UButton>
-                  <UButton
-                    @click="uploadFromGoogleDrive"
-                    :disabled="googleDriveFiles.length === 0 || isUploadingFromGoogleDrive"
-                    :loading="isUploadingFromGoogleDrive"
-                    color="blue"
-                    size="lg"
-                    class="min-w-[180px]"
-                  >
-                    Upload from Google Drive
-                  </UButton>
                 </div>
+              </UFormGroup>
+
+              <!-- OR Divider -->
+              <div class="relative">
+                <div class="absolute inset-0 flex items-center">
+                  <div class="w-full border-t border-dark-600"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                  <span class="px-4 bg-dark-800 text-gray-400 font-medium">OR</span>
+                </div>
+              </div>
+
+              <!-- Method 2: OAuth Integration -->
+              <UFormGroup label="Option 2: Google OAuth Integration">
+                <UButton
+                  color="gray"
+                  size="lg"
+                  class="w-full"
+                  icon="i-logos-google-drive"
+                >
+                  Sign in with Google Drive
+                </UButton>
               </UFormGroup>
 
               <!-- Note -->
@@ -292,32 +304,105 @@
 
               <!-- Files Table -->
               <div class="border border-dark-700 rounded-lg overflow-hidden">
+                <!-- Table Header with selection controls -->
                 <div class="bg-dark-900 px-4 py-3 border-b border-dark-700">
-                  <div class="grid grid-cols-3 gap-4 text-sm font-medium text-gray-400">
-                    <div>Name</div>
-                    <div>File Type</div>
-                    <div>Size</div>
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-medium text-gray-300">
+                      Files from Google Drive
+                      <span v-if="googleDriveFiles.length > 0" class="text-gray-500">
+                        ({{ selectedGoogleDriveFiles.length }}/{{ googleDriveFiles.length }} selected)
+                      </span>
+                    </h3>
+                    <div v-if="googleDriveFiles.length > 0" class="flex items-center space-x-2">
+                      <UButton
+                        @click="selectAllGoogleDriveFiles"
+                        variant="ghost"
+                        size="xs"
+                        color="gray"
+                        :disabled="selectedGoogleDriveFiles.length === googleDriveFiles.length"
+                      >
+                        Select All
+                      </UButton>
+                      <UButton
+                        @click="clearGoogleDriveSelection"
+                        variant="ghost"
+                        size="xs"
+                        color="gray"
+                        :disabled="selectedGoogleDriveFiles.length === 0"
+                      >
+                        Clear All
+                      </UButton>
+                    </div>
                   </div>
                 </div>
 
-                <div class="bg-dark-800 min-h-[200px] flex items-center justify-center">
-                  <div v-if="googleDriveFiles.length === 0" class="text-center py-8">
+                <div class="bg-dark-800 min-h-[200px]">
+                  <div v-if="googleDriveFiles.length === 0" class="text-center py-16">
                     <UIcon name="heroicons:folder-open" class="w-12 h-12 text-gray-500 mx-auto mb-3" />
                     <p class="text-gray-400 text-sm">No files available for selection.</p>
+                    <p class="text-gray-500 text-xs mt-1">Enter a Google Drive URL and click "Fetch Files" to see available files.</p>
                   </div>
-                  <div v-else class="w-full">
-                    <div
-                      v-for="file in googleDriveFiles"
-                      :key="file.id"
-                      class="px-4 py-3 border-b border-dark-700 hover:bg-dark-700/50 transition-colors"
-                    >
-                      <div class="grid grid-cols-3 gap-4 text-sm">
-                        <div class="text-white font-medium">{{ file.name }}</div>
-                        <div class="text-gray-400">{{ file.type }}</div>
-                        <div class="text-gray-400">{{ file.size }}</div>
+
+                  <UTable
+                    v-else
+                    v-model="selectedGoogleDriveFiles"
+                    :rows="googleDriveFiles"
+                    :columns="googleDriveColumns"
+                    :loading="false"
+                    class="divide-y divide-dark-700"
+                    :ui="{
+                      wrapper: 'relative overflow-x-auto',
+                      base: 'min-w-full table-fixed',
+                      thead: 'bg-dark-900',
+                      tbody: 'bg-dark-800 divide-y divide-dark-700 [&>tr:hover]:bg-dark-700/50',
+                      tr: {
+                        base: '',
+                        selected: 'bg-blue-500/10',
+                        active: '',
+                      },
+                      th: {
+                        base: 'text-left rtl:text-left',
+                        padding: 'px-4 py-3',
+                        color: 'text-gray-400',
+                        font: 'font-medium text-xs',
+                        size: 'text-xs',
+                      },
+                      td: {
+                        base: 'whitespace-nowrap',
+                        padding: 'px-4 py-3',
+                        color: 'text-gray-300',
+                        font: '',
+                        size: 'text-sm',
+                      },
+                    }"
+                  >
+                    <!-- File name column with icon -->
+                    <template #name-data="{ row }">
+                      <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center mr-3">
+                          <UIcon :name="getFileIcon(row.type)" class="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-white truncate max-w-xs">{{ row.name }}</div>
+                          <div v-if="row.modifiedTime" class="text-xs text-gray-500">
+                            Modified: {{ formatDate(row.modifiedTime) }}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </template>
+
+                    <!-- File type with badge -->
+                    <template #type-data="{ row }">
+                      <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-500/20 text-gray-400">
+                        {{ row.type }}
+                      </span>
+                    </template>
+
+                    <!-- File size -->
+                    <template #size-data="{ row }">
+                      <span class="text-sm text-gray-300">{{ row.size }}</span>
+                    </template>
+                  </UTable>
                 </div>
               </div>
 
@@ -335,14 +420,14 @@
                 </UButton>
                 <UButton
                   @click="uploadFromGoogleDrive"
-                  :disabled="googleDriveFiles.length === 0 || isUploadingFromGoogleDrive"
+                  :disabled="selectedGoogleDriveFiles.length === 0 || isUploadingFromGoogleDrive"
                   :loading="isUploadingFromGoogleDrive"
                   color="primary"
                   size="lg"
                   class="min-w-[120px]"
                   icon="heroicons:cloud-arrow-up"
                 >
-                  {{ isUploadingFromGoogleDrive ? 'Uploading...' : 'Upload' }}
+                  {{ isUploadingFromGoogleDrive ? 'Uploading...' : `Upload Selected (${selectedGoogleDriveFiles.length})` }}
                 </UButton>
               </div>
             </div>
@@ -432,6 +517,28 @@ const isUploadingFromGoogleDrive = ref(false)
 // Google Drive computed properties from store
 const googleDriveFiles = computed(() => artefactsStore.googleDriveFiles)
 const isFetchingFiles = computed(() => artefactsStore.isLoadingGoogleDrive)
+
+// Selected Google Drive files for checkbox selection
+const selectedGoogleDriveFiles = ref<GoogleDriveFile[]>([])
+
+// Google Drive table columns
+const googleDriveColumns = [
+  {
+    key: 'name',
+    label: 'File Name',
+    sortable: true,
+  },
+  {
+    key: 'type',
+    label: 'Type',
+    sortable: true,
+  },
+  {
+    key: 'size',
+    label: 'Size',
+    sortable: true,
+  },
+]
 
 // Form state for UForm
 const state = reactive({
@@ -609,6 +716,9 @@ const fetchGoogleDriveFiles = async () => {
   }
 
   try {
+    // Clear previous selection when fetching new files
+    selectedGoogleDriveFiles.value = []
+
     const result = await artefactsStore.fetchGoogleDriveFiles(googleDriveState.url)
 
     if (!result.success) {
@@ -616,7 +726,7 @@ const fetchGoogleDriveFiles = async () => {
     } else if (result.files.length === 0) {
       showWarning('No supported files found in the Google Drive folder')
     } else {
-      showSuccess(`Found ${result.files.length} supported file${result.files.length > 1 ? 's' : ''} in Google Drive folder`)
+      showSuccess(`Found ${result.files.length} supported file${result.files.length > 1 ? 's' : ''} available for selection`)
     }
   } catch (error) {
     console.error('Failed to fetch files:', error)
@@ -630,8 +740,8 @@ const uploadFromGoogleDrive = async () => {
     return
   }
 
-  if (googleDriveFiles.value.length === 0) {
-    showWarning('No files available to upload')
+  if (selectedGoogleDriveFiles.value.length === 0) {
+    showWarning('Please select files to upload')
     return
   }
 
@@ -641,7 +751,7 @@ const uploadFromGoogleDrive = async () => {
     // Simulate upload process
     await new Promise(resolve => setTimeout(resolve, 2000))
 
-    const newArtefacts = googleDriveFiles.value.map(file => ({
+    const newArtefacts = selectedGoogleDriveFiles.value.map(file => ({
       id: Date.now() + Math.random(),
       name: file.name,
       description: 'Uploaded from Google Drive',
@@ -659,6 +769,7 @@ const uploadFromGoogleDrive = async () => {
     // Reset Google Drive state
     googleDriveState.category = ''
     googleDriveState.url = ''
+    selectedGoogleDriveFiles.value = []
     artefactsStore.clearGoogleDriveFiles()
 
     isUploadingFromGoogleDrive.value = false
@@ -669,6 +780,41 @@ const uploadFromGoogleDrive = async () => {
     console.error('Upload from Google Drive failed:', error)
     showError('Upload failed. Please try again.')
     isUploadingFromGoogleDrive.value = false
+  }
+}
+
+// Google Drive selection methods
+const selectAllGoogleDriveFiles = () => {
+  selectedGoogleDriveFiles.value = [...googleDriveFiles.value]
+}
+
+const clearGoogleDriveSelection = () => {
+  selectedGoogleDriveFiles.value = []
+}
+
+// Helper methods
+const getFileIcon = (fileType: string) => {
+  const iconMap: Record<string, string> = {
+    'PDF': 'heroicons:document-text',
+    'Word': 'heroicons:document',
+    'CSV': 'heroicons:table-cells',
+    'TXT': 'heroicons:document-text',
+    'Markdown': 'heroicons:document-text',
+    'Image': 'heroicons:photo',
+  }
+  return iconMap[fileType] || 'heroicons:document'
+}
+
+const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  } catch {
+    return 'Unknown'
   }
 }
 
@@ -693,6 +839,7 @@ const resetAllFields = () => {
   state.description = ''
   googleDriveState.category = ''
   googleDriveState.url = ''
+  selectedGoogleDriveFiles.value = []
   artefactsStore.clearGoogleDriveFiles()
 
   if (fileInput.value) {
@@ -724,6 +871,7 @@ watch(uploadType, () => {
   state.description = ''
   googleDriveState.category = ''
   googleDriveState.url = ''
+  selectedGoogleDriveFiles.value = []
   artefactsStore.clearGoogleDriveFiles()
 
   // Reset file input

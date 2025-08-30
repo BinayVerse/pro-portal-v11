@@ -1,20 +1,15 @@
 <template>
   <div class="bg-dark-800 rounded-lg p-6 border border-dark-700">
-    <div class="flex flex-col lg:flex-row gap-4">
+    <div class="flex flex-col lg:flex-row gap-4 items-end">
       <!-- Search Input -->
       <div class="flex-1">
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <UIcon name="heroicons:magnifying-glass" class="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            :value="searchQuery"
-            @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-            type="text"
-            placeholder="Search artefacts..."
-            class="block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          />
-        </div>
+        <UInput
+          :model-value="searchQuery"
+          @update:model-value="$emit('update:searchQuery', $event)"
+          placeholder="Search artefacts..."
+          size="lg"
+          icon="i-heroicons-magnifying-glass"
+        />
       </div>
 
       <!-- Category Filter -->
@@ -26,41 +21,42 @@
             { label: 'All Categories', value: '' },
             ...availableCategories.map(cat => ({ label: cat, value: cat }))
           ]"
-          placeholder="All Categories"
           size="lg"
         />
       </div>
 
       <!-- Type Filter -->
       <div class="lg:w-48">
-        <select
-          :value="selectedType"
-          @change="$emit('update:selectedType', ($event.target as HTMLSelectElement).value)"
-          class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-        >
-          <option value="">All Types</option>
-          <option value="PDF">PDF</option>
-          <option value="Word">Word</option>
-          <option value="Markdown">Markdown</option>
-          <option value="TXT">TXT</option>
-          <option value="CSV">CSV</option>
-          <option value="Image">Image</option>
-          <option value="Database">Database</option>
-        </select>
+        <USelect
+          :model-value="selectedType"
+          @update:model-value="$emit('update:selectedType', $event)"
+          :options="[
+            { label: 'All Types', value: '' },
+            { label: 'PDF', value: 'PDF' },
+            { label: 'Word', value: 'Word' },
+            { label: 'Markdown', value: 'Markdown' },
+            { label: 'TXT', value: 'TXT' },
+            { label: 'CSV', value: 'CSV' },
+            { label: 'Image', value: 'Image' },
+            { label: 'Database', value: 'Database' }
+          ]"
+          size="lg"
+        />
       </div>
 
       <!-- Status Filter -->
       <div class="lg:w-48">
-        <select
-          :value="selectedStatus"
-          @change="$emit('update:selectedStatus', ($event.target as HTMLSelectElement).value)"
-          class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-        >
-          <option value="">All Status</option>
-          <option value="processed">Processed</option>
-          <option value="processing">Processing</option>
-          <option value="failed">Failed</option>
-        </select>
+        <USelect
+          :model-value="selectedStatus"
+          @update:model-value="$emit('update:selectedStatus', $event)"
+          :options="[
+            { label: 'All Status', value: '' },
+            { label: 'Processed', value: 'processed' },
+            { label: 'Processing', value: 'processing' },
+            { label: 'Failed', value: 'failed' }
+          ]"
+          size="lg"
+        />
       </div>
     </div>
   </div>
