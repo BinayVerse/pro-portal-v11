@@ -1,114 +1,193 @@
-import { defineEventHandler, readBody, setResponseStatus } from 'h3';
-import { google } from 'googleapis';
-import { CustomError } from '../../utils/custom.error';
+import { defineEventHandler, readBody, setResponseStatus } from 'h3'
+import { CustomError } from '../../utils/custom.error'
+import { query } from '../../utils/db'
+import jwt from 'jsonwebtoken'
+import axios from 'axios'
+import { processDocument } from '~/server/utils/processDocument'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { Buffer } from 'buffer'
+import { Readable } from 'stream'
 
 export default defineEventHandler(async (event) => {
-    try {
-        const body = await readBody(event);
-        const { folderUrl } = body;
+  const config = useRuntimeConfig()
+  const bucketName = config.awsBucketName
+  const folderName = config.awsFolderName
 
-        if (!folderUrl) {
-            throw new CustomError('Google Drive folder URL is required', 400);
-        }
+  if (!bucketName) {
+    throw new CustomError('S3 bucket name is not configured', 500)
+  }
 
-        let folderId: string;
+  const token = event.node.req.headers['authorization']?.split(' ')[1]
+  if (!token) {
+    throw new CustomError('Unauthorized: No token provided', 401)
+  }
 
-        if (folderUrl === 'https://drive.google.com/drive/my-drive') {
-            folderId = 'root';
-        } else {
-            const match = folderUrl.match(/[-\w]{25,}/);
-            if (!match) {
-                throw new CustomError('Invalid Google Drive folder URL', 400);
-            }
-            folderId = match[0];
-        }
+  let userId
+  try {
+    const decodedToken = jwt.verify(token, config.jwtToken as string)
+    userId = (decodedToken as { user_id: any }).user_id
+  } catch {
+    throw new CustomError('Unauthorized: Invalid token', 401)
+  }
 
-        const config = useRuntimeConfig();
-        const base64Creds = config.googleApplicationCredentialsBase64 as string;
-
-        if (!base64Creds) {
-            throw new CustomError('Missing GCP credentials', 500);
-        }
-
-        const jsonString = Buffer.from(base64Creds, 'base64').toString('utf-8');
-        const credentials = JSON.parse(jsonString);
-
-        const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: credentials.client_email,
-                private_key: credentials.private_key.replace(/\\n/g, '\n'),
-            },
-            scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-        });
-
-        const drive = google.drive({ version: 'v3', auth });
-
-        // Validate folder
-        try {
-            const folderResponse = await drive.files.get({
-                fileId: folderId,
-                fields: 'id',
-            });
-
-            if (!folderResponse.data.id) {
-                throw new CustomError('Invalid Google Drive folder: Folder not found', 400);
-            }
-        } catch {
-            throw new CustomError('Invalid Google Drive folder: Folder not found', 400);
-        }
-
-        const allowedExtensions = ['.csv', '.doc', '.docx', '.pdf', '.md', '.txt'];
-
-        const response = await drive.files.list({
-            q: `'${folderId}' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'`,
-            fields: 'files(id, name, mimeType, size, webViewLink, thumbnailLink, modifiedTime)',
-        });
-
-        const allFiles = response.data.files ?? [];
-
-        const filteredFiles = allFiles
-            .filter(file => {
-                const ext = file.name?.toLowerCase().split('.').pop();
-                return ext && allowedExtensions.includes(`.${ext}`);
-            })
-            .map(file => ({
-                ...file,
-                size: file.size ? formatFileSize(Number(file.size)) : 'Unknown',
-                type: getFileType(file.name || ''),
-            }));
-
-        setResponseStatus(event, 200);
-        return {
-            statusCode: 200,
-            status: 'success',
-            data: filteredFiles,
-            message: filteredFiles.length ? 'Files fetched successfully' : 'No files found',
-            otherFiles: allFiles.length - filteredFiles.length,
-        };
-    } catch (err: any) {
-        console.error('Error fetching Google Drive files:', err);
-        throw new CustomError(err.message || 'Failed to fetch files', 500);
+  try {
+    const userQuery = `
+      SELECT u.org_id, o.org_name
+      FROM users u
+      INNER JOIN organizations o ON u.org_id = o.org_id
+      WHERE u.user_id = $1;
+    `
+    const userResult = await query(userQuery, [userId])
+    if (userResult.rows.length === 0) {
+      throw new CustomError('User or organization not found', 404)
     }
-});
 
-// Helper functions
-function formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'kB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
+    const { org_id, org_name } = userResult.rows[0]
 
-function getFileType(fileName: string): string {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    const typeMap: Record<string, string> = {
-        pdf: 'PDF',
-        doc: 'Word',
-        docx: 'Word',
-        txt: 'TXT',
-        csv: 'CSV',
-        md: 'Markdown',
-    };
-    return typeMap[extension || ''] || 'Unknown';
-}
+    const body = await readBody(event)
+    const { selectedFileDetails, category } = body
+
+    if (!selectedFileDetails || !Array.isArray(selectedFileDetails)) {
+      throw new CustomError('No files selected for upload', 400)
+    }
+
+    if (!category) {
+      throw new CustomError('Category is required', 400)
+    }
+
+    const s3Client = new S3Client({
+      region: config.awsRegion,
+      credentials: {
+        accessKeyId: config.awsAccessKeyId,
+        secretAccessKey: config.awsSecretAccessKey,
+      },
+    })
+
+    const companyName = org_name.toLowerCase().replace(/ /g, '_')
+    const prefix = `${folderName}/${companyName}/files/`
+
+    const uploadedFiles = []
+    const documentData = []
+
+    for (const file of selectedFileDetails) {
+      const { id, name, webViewLink, mimeType, size, googleAccessToken } = file
+      if (!id || !webViewLink) {
+        throw new CustomError(`Invalid file data: ${name}`, 400)
+      }
+
+      const downloadUrl = googleAccessToken
+        ? `https://www.googleapis.com/drive/v3/files/${id}?alt=media`
+        : `https://drive.google.com/uc?export=download&id=${id}`
+
+      const axiosConfig: any = {
+        method: 'GET',
+        url: downloadUrl,
+        responseType: 'stream',
+        headers: googleAccessToken
+          ? { Authorization: `Bearer ${googleAccessToken}` }
+          : undefined,
+      }
+
+      const response = await axios(axiosConfig)
+      if (!response || !response.data) {
+        throw new CustomError(`Failed to download file: ${name}`, 500)
+      }
+
+      const chunks: Buffer[] = []
+      for await (const chunk of response.data as Readable) {
+        chunks.push(Buffer.from(chunk))
+      }
+      const fileBuffer = Buffer.concat(chunks)
+
+      const s3Key = `${prefix}${name}`
+
+      // Upload file to S3 with enhanced error handling
+      try {
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: bucketName,
+            Key: s3Key,
+            Body: fileBuffer,
+            ContentLength: fileBuffer.length,
+            ContentType: mimeType,
+          })
+        )
+      } catch (s3Error: any) {
+        console.error('S3 Upload Error:', s3Error)
+
+        // Check if it's a path/permission issue
+        if (s3Error.Code === 'NoSuchBucket') {
+          throw new CustomError(`S3 bucket '${bucketName}' does not exist`, 500)
+        } else if (s3Error.Code === 'AccessDenied') {
+          throw new CustomError(`Access denied to S3 bucket or path '${prefix}'`, 500)
+        } else {
+          throw new CustomError(`Failed to upload file '${name}' to S3: ${s3Error.message}`, 500)
+        }
+      }
+
+      const publicUrl = `https://${bucketName}.s3.${config.awsRegion}.amazonaws.com/${s3Key}`
+
+      // Insert or update in DB
+      const existing = await query(
+        `SELECT id FROM organization_documents WHERE org_id = $1 AND name = $2`,
+        [org_id, name]
+      )
+
+      let documentId
+      if (existing.rows.length > 0) {
+        const result = await query(
+          `UPDATE organization_documents 
+           SET document_link = $1, file_category = $2, status = $3, summary = $4, is_summarized = $5, updated_at = NOW() 
+           WHERE id = $6 RETURNING id`,
+          [publicUrl, category, 'processing', null, false, existing.rows[0].id]
+        )
+        documentId = result.rows[0].id
+      } else {
+        const result = await query(
+          `INSERT INTO organization_documents 
+           (org_id, doc_type, document_link, status, file_category, name, content_type, file_size, summary, is_summarized)
+           VALUES ($1, 'gdrive', $2, 'processing', $3, $4, $5, $6, null, false) RETURNING id`,
+          [
+            org_id,
+            publicUrl,
+            category,
+            name,
+            mimeType,
+            size ? parseInt(size.replace(' KB', '')) * 1024 : null,
+          ]
+        )
+        documentId = result.rows[0].id
+      }
+
+      documentData.push({
+        id: documentId,
+        name,
+        type: 'document',
+        link: publicUrl,
+      })
+
+      uploadedFiles.push({
+        name,
+        publicUrl,
+        contentType: mimeType,
+        size,
+        type: file.type,
+      })
+    }
+
+    if (documentData.length > 0) {
+      await processDocument(bucketName, folderName, org_name, org_id, userId, documentData, token)
+    }
+
+    setResponseStatus(event, 201)
+    return {
+      statusCode: 201,
+      status: 'success',
+      message: 'Files uploaded successfully to S3',
+      files: uploadedFiles,
+    }
+  } catch (error: any) {
+    console.error('Error uploading files from Google Drive:', error)
+    throw new CustomError(error.message || 'Failed to upload files', 500)
+  }
+})

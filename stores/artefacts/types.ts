@@ -7,6 +7,7 @@ export interface ArtefactGoogleDriveFile {
   webViewLink?: string
   thumbnailLink?: string
   modifiedTime?: string
+  googleAccessToken?: string
 }
 
 export interface GoogleDriveResponse {

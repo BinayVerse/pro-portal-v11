@@ -281,12 +281,15 @@
               <!-- Method 2: OAuth Integration -->
               <UFormGroup label="Option 2: Google OAuth Integration">
                 <UButton
+                  @click="handleGoogleOAuthSignIn"
+                  :loading="googleDrive.isLoading.value"
+                  :disabled="isUploadingFromGoogleDrive"
                   color="gray"
                   size="lg"
                   class="w-full"
                   icon="i-logos-google-drive"
                 >
-                  Sign in with Google Drive
+                  {{ googleDrive.isLoading.value ? 'Connecting...' : 'Sign in with Google Drive' }}
                 </UButton>
               </UFormGroup>
 
@@ -444,6 +447,7 @@ import type { FormSubmitEvent } from '#ui/types'
 import { nextTick } from 'vue'
 import { useArtefactsStore } from '~/stores/artefacts'
 import { useNotification } from '~/composables/useNotification'
+import { useGoogleDrive, type GoogleDriveFile as GoogleOAuthFile } from '~/composables/useGoogleDrive'
 
 interface GoogleDriveFile {
   id: string
@@ -468,6 +472,9 @@ const artefactsStore = useArtefactsStore()
 
 // Initialize notification composable
 const { showError, showWarning, showSuccess } = useNotification()
+
+// Initialize Google Drive OAuth composable
+const googleDrive = useGoogleDrive()
 
 const emit = defineEmits<{
   'update:isOpen': [value: boolean]
@@ -512,7 +519,7 @@ const googleDriveState = reactive({
   url: '',
 })
 
-const isUploadingFromGoogleDrive = ref(false)
+const isUploadingFromGoogleDrive = computed(() => artefactsStore.isUploadingGoogleDrive)
 
 // Google Drive computed properties from store
 const googleDriveFiles = computed(() => artefactsStore.googleDriveFiles)
@@ -746,12 +753,19 @@ const uploadFromGoogleDrive = async () => {
   }
 
   try {
-    isUploadingFromGoogleDrive.value = true
+    // Call the store method to upload files
+    const result = await artefactsStore.uploadGoogleDriveFiles(
+      selectedGoogleDriveFiles.value,
+      googleDriveState.category
+    )
 
-    // Simulate upload process
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    if (!result.success) {
+      showError(result.message)
+      return
+    }
 
-    const newArtefacts = selectedGoogleDriveFiles.value.map(file => ({
+    // Create artefact objects from uploaded files
+    const newArtefacts = result.files.map(file => ({
       id: Date.now() + Math.random(),
       name: file.name,
       description: 'Uploaded from Google Drive',
@@ -772,14 +786,106 @@ const uploadFromGoogleDrive = async () => {
     selectedGoogleDriveFiles.value = []
     artefactsStore.clearGoogleDriveFiles()
 
-    isUploadingFromGoogleDrive.value = false
-    showSuccess(`Successfully uploaded ${newArtefacts.length} file${newArtefacts.length > 1 ? 's' : ''} from Google Drive!`)
+    showSuccess(result.message)
     emit('close')
 
   } catch (error) {
     console.error('Upload from Google Drive failed:', error)
     showError('Upload failed. Please try again.')
-    isUploadingFromGoogleDrive.value = false
+  }
+}
+
+// Google OAuth Integration Handler
+const handleGoogleOAuthSignIn = async () => {
+  if (!googleDriveState.category) {
+    showWarning('Please select a category first')
+    return
+  }
+
+  try {
+    // Define the callback function that will handle selected files
+    const handleSelectedFiles = async (selectedFiles: GoogleOAuthFile[]) => {
+      if (selectedFiles.length === 0) {
+        return
+      }
+
+      // Check for existing files
+      const existingFileNames: string[] = []
+      selectedFiles.forEach((file: GoogleOAuthFile) => {
+        if (googleDrive.checkFileExistence(file.name, [])) {
+          existingFileNames.push(file.name)
+        }
+      })
+
+      if (existingFileNames.length > 0) {
+        showWarning(
+          `The following files already exist: ${existingFileNames.join(', ')}. They will be replaced.`
+        )
+      }
+
+      // Convert GoogleOAuthFile to ArtefactGoogleDriveFile format for upload
+      const convertedFiles = selectedFiles.map((file: GoogleOAuthFile) => ({
+        id: file.id,
+        name: file.name,
+        type: googleDrive.getFileType(file.mimeType),
+        size: file.size,
+        mimeType: file.mimeType,
+        webViewLink: file.webViewLink,
+        thumbnailLink: file.thumbnailLink,
+        modifiedTime: file.modifiedTime,
+        googleAccessToken: file.googleAccessToken
+      }))
+
+      // Upload the files
+      try {
+        const result = await artefactsStore.uploadGoogleDriveFiles(
+          convertedFiles,
+          googleDriveState.category
+        )
+
+        if (result.success) {
+          // Create artefact objects from uploaded files
+          const newArtefacts = result.files.map(file => ({
+            id: Date.now() + Math.random(),
+            name: file.name,
+            description: 'Uploaded from Google Drive (OAuth)',
+            category: googleDriveState.category,
+            type: file.type,
+            size: file.size,
+            status: 'processing' as const,
+            uploadedBy: 'Current User',
+            lastUpdated: new Date().toLocaleString(),
+            artefact: file.name,
+          }))
+
+          emit('googleDriveUploaded', newArtefacts)
+
+          // Reset state
+          googleDriveState.category = ''
+          googleDriveState.url = ''
+          selectedGoogleDriveFiles.value = []
+          artefactsStore.clearGoogleDriveFiles()
+          googleDrive.cleanup()
+
+          showSuccess(`Successfully uploaded ${result.files.length} file${result.files.length > 1 ? 's' : ''} from Google Drive`)
+          emit('close')
+        } else {
+          showError(result.message || 'Upload failed')
+        }
+      } catch (uploadError) {
+        console.error('OAuth upload failed:', uploadError)
+        showError('Failed to upload files. Please try again.')
+      }
+    }
+
+    // Start OAuth flow with custom callback
+    await googleDrive.signInWithGoogle(handleSelectedFiles)
+
+  } catch (error) {
+    console.error('Google OAuth sign-in failed:', error)
+    showError('Failed to connect to Google Drive. Please try again.')
+    // Ensure cleanup is called even on error
+    googleDrive.cleanup()
   }
 }
 
@@ -841,12 +947,11 @@ const resetAllFields = () => {
   googleDriveState.url = ''
   selectedGoogleDriveFiles.value = []
   artefactsStore.clearGoogleDriveFiles()
+  googleDrive.cleanup()
 
   if (fileInput.value) {
     fileInput.value.value = ''
   }
-
-  isUploadingFromGoogleDrive.value = false
 }
 
 // Watch for modal state changes
@@ -873,13 +978,11 @@ watch(uploadType, () => {
   googleDriveState.url = ''
   selectedGoogleDriveFiles.value = []
   artefactsStore.clearGoogleDriveFiles()
+  googleDrive.cleanup()
 
   // Reset file input
   if (fileInput.value) {
     fileInput.value.value = ''
   }
-
-  // Reset loading states
-  isUploadingFromGoogleDrive.value = false
 })
 </script>
