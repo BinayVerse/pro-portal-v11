@@ -95,6 +95,7 @@
 
 <script setup lang="ts">
 import { useArtefactsStore } from '~/stores/artefacts'
+import { marked } from 'marked'
 
 interface Props {
   isOpen: boolean
@@ -208,13 +209,14 @@ const renderContentByFileType = async (type: string, url: string) => {
 
     switch (type) {
       case 'txt':
-        viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px);">${escapeHtml(decodedData)}</pre></div>`
+        viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px); color: #1f2937;">${escapeHtml(decodedData)}</pre></div>`
         break
 
       case 'md':
-        // For markdown, we'll show raw content for now
-        // You can add marked.js for proper rendering if needed
-        viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; min-height: calc(100vh - 220px);">${escapeHtml(decodedData)}</pre></div>`
+        // Configure and render markdown as HTML using marked
+        configureMarked()
+        const renderedMarkdown = marked.parse(decodedData)
+        viewContent.value = `<div class="h-full overflow-y-auto p-4" style="background: white; color: #1f2937; line-height: 1.6; min-height: calc(100vh - 220px);">${renderedMarkdown}</div>`
         break
 
       case 'csv':
@@ -230,26 +232,26 @@ const renderContentByFileType = async (type: string, url: string) => {
           )
           .join('')
         viewContent.value = `
-          <div class="h-full overflow-auto p-4" style="height: calc(100vh - 180px);">
-            <table class="min-w-full border-collapse border border-gray-300">
+          <div class="h-full overflow-auto p-4" style="height: calc(100vh - 180px); color: #1f2937;">
+            <table class="min-w-full border-collapse border border-gray-300" style="color: #1f2937;">
               ${csvTable}
             </table>
-            ${csvLines.length === 100 ? '<p class="text-sm text-gray-500 mt-2">Showing first 100 rows...</p>' : ''}
+            ${csvLines.length === 100 ? '<p class="text-sm mt-2" style="color: #6b7280;">Showing first 100 rows...</p>' : ''}
           </div>`
         break
 
       case 'json':
         try {
           const jsonData = JSON.parse(decodedData)
-          viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px);">${escapeHtml(JSON.stringify(jsonData, null, 2))}</pre></div>`
+          viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px); color: #1f2937;">${escapeHtml(JSON.stringify(jsonData, null, 2))}</pre></div>`
         } catch {
-          viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px);">${escapeHtml(decodedData)}</pre></div>`
+          viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px); color: #1f2937;">${escapeHtml(decodedData)}</pre></div>`
         }
         break
 
       case 'html':
         // For security, we'll show HTML as text
-        viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px);">${escapeHtml(decodedData)}</pre></div>`
+        viewContent.value = `<div class="h-full overflow-y-auto p-4"><pre style="white-space: pre-wrap; padding: 1rem; background: white; border-radius: 0.375rem; font-family: 'Courier New', monospace; min-height: calc(100vh - 220px); color: #1f2937;">${escapeHtml(decodedData)}</pre></div>`
         break
 
       default:
@@ -268,6 +270,67 @@ const escapeHtml = (text: string): string => {
   return div.innerHTML
 }
 
+// Configure marked with custom renderer for styling
+const configureMarked = () => {
+  const renderer = new marked.Renderer()
+
+  // Custom heading styles
+  renderer.heading = (text: string, level: number) => {
+    const sizes = ['1.875rem', '1.5rem', '1.25rem', '1.125rem', '1rem', '0.875rem']
+    const margins = ['2rem 0 1rem 0', '1.5rem 0 0.75rem 0', '1rem 0 0.5rem 0', '1rem 0 0.5rem 0', '0.75rem 0 0.5rem 0', '0.75rem 0 0.5rem 0']
+
+    return `<h${level} style="font-size: ${sizes[level-1]}; font-weight: 600; margin: ${margins[level-1]}; color: #1f2937;">${text}</h${level}>`
+  }
+
+  // Custom paragraph styles
+  renderer.paragraph = (text: string) => {
+    return `<p style="margin: 1rem 0; color: #1f2937; line-height: 1.6;">${text}</p>`
+  }
+
+  // Custom code block styles
+  renderer.code = (code: string, language: string | undefined) => {
+    return `<pre style="background: #f3f4f6; padding: 1rem; border-radius: 0.375rem; margin: 1rem 0; overflow-x: auto; color: #1f2937;"><code>${code}</code></pre>`
+  }
+
+  // Custom inline code styles
+  renderer.codespan = (code: string) => {
+    return `<code style="background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-family: monospace; color: #1f2937;">${code}</code>`
+  }
+
+  // Custom blockquote styles
+  renderer.blockquote = (quote: string) => {
+    return `<blockquote style="border-left: 4px solid #e5e7eb; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #6b7280;">${quote}</blockquote>`
+  }
+
+  // Custom list styles
+  renderer.list = (body: string, ordered: boolean) => {
+    const type = ordered ? 'ol' : 'ul'
+    const style = ordered ? 'list-style-type: decimal;' : 'list-style-type: disc;'
+    return `<${type} style="margin: 1rem 0; padding-left: 1.5rem; ${style}">${body}</${type}>`
+  }
+
+  renderer.listitem = (text: string) => {
+    return `<li style="margin: 0.25rem 0; color: #1f2937;">${text}</li>`
+  }
+
+  // Custom link styles
+  renderer.link = (href: string, title: string | null, text: string) => {
+    return `<a href="${href}" ${title ? `title="${title}"` : ''} style="color: #3b82f6; text-decoration: underline;" target="_blank">${text}</a>`
+  }
+
+  // Custom horizontal rule
+  renderer.hr = () => {
+    return '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0;">'
+  }
+
+  marked.setOptions({
+    renderer,
+    gfm: true,
+    breaks: false,
+    sanitize: false
+  })
+}
+
 const retry = async () => {
   await loadDocument()
 }
@@ -282,7 +345,7 @@ const closeModal = () => {
 <style scoped>
 /* Custom styles for document content */
 .prose {
-  color: inherit;
+  color: #1f2937;
 }
 
 .prose pre {
@@ -290,6 +353,7 @@ const closeModal = () => {
   border-radius: 0.375rem;
   padding: 1rem;
   overflow-x: auto;
+  color: #1f2937;
 }
 
 .prose table {
