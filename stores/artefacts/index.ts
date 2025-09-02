@@ -822,8 +822,8 @@ export const useArtefactsStore = defineStore('artefacts', {
         try {
           await this.fetchArtefacts()
 
-          // Only stop polling if all documents are processed (not summarized)
-          if (this.allDocumentsProcessed) {
+          // Stop polling only if all documents are processed AND summarized
+          if (this.allDocumentsProcessed && this.allDocumentsSummarized) {
             this.stopAutoProcessing()
           } else {
             this.adjustPollingInterval()
@@ -965,6 +965,7 @@ export const useArtefactsStore = defineStore('artefacts', {
         progress: this.processingProgress,
         pollingInterval: this.pollingIntervalMs / 1000, // in seconds
         allProcessed: this.allDocumentsProcessed,
+        allComplete: this.allDocumentsProcessed && this.allDocumentsSummarized,
       }
     },
   },

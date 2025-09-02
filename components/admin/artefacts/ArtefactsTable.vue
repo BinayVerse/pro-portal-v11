@@ -13,7 +13,7 @@
     <UTable
       :rows="artefacts"
       :columns="columns"
-      :loading="false"
+      :loading="loading"
       :sort="{ column: 'lastUpdated', direction: 'desc' }"
       class="divide-y divide-dark-700"
       :ui="{
@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+import { withDefaults } from 'vue'
 interface Artefact {
   id: number
   name: string
@@ -182,9 +183,12 @@ interface Artefact {
 interface Props {
   artefacts: Artefact[]
   summarizingDocs?: Set<number>
+  loading?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  loading: false
+})
 
 defineEmits<{
   viewArtefact: [artefact: Artefact]
