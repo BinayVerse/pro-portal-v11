@@ -199,15 +199,10 @@ const stats = computed(() => artefactsStore.getStats)
 const isLoadingArtefacts = computed(() => artefactsStore.isArtefactsLoading)
 const artefactsError = computed(() => artefactsStore.getArtefactsError)
 
-// Show loading for stats on initial load OR when processing/summarizing documents
+// Show loading for stats only on initial load (when no data exists yet)
 const isLoadingStats = computed(() => {
-  // Always show loading on initial load (when we have no data yet)
-  if (artefactsStore.isArtefactsLoading && artefacts.value.length === 0) {
-    return true
-  }
-
-  // Show loading if we're loading and not all documents are processed AND summarized
-  return artefactsStore.isArtefactsLoading && !(artefactsStore.allDocumentsProcessed && artefactsStore.allDocumentsSummarized)
+  // Only show loading on true initial load when we have no artefacts data at all
+  return artefactsStore.isArtefactsLoading && artefacts.value.length === 0
 })
 
 // Individual stats computed properties
