@@ -24,6 +24,7 @@
     <!-- Artefacts Table -->
     <ArtefactsTable
       :artefacts="filteredArtefacts"
+      :summarizing-docs="artefactsStore.getSummarizingDocs"
       @view-artefact="viewArtefact"
       @reprocess-artefact="reprocessArtefact"
       @delete-artefact="deleteArtefact"
@@ -348,6 +349,13 @@ const summarizeArtefact = async (artefact: any) => {
     return
   }
 
+  // Check if document is already being auto-processed
+  if (artefactsStore.isDocumentBeingSummarized(artefact.id)) {
+    const { showInfo } = useNotification()
+    showInfo('This document is already being processed automatically. Please wait for completion.')
+    return
+  }
+
   // Show confirmation modal
   showConfirmSummarizeArtefact.value = true
   artefactToSummarize.value = artefact
@@ -367,6 +375,14 @@ const confirmSummarizeArtefact = async () => {
 
     if (result.success) {
       showSuccess(result.message)
+
+      // Update document status locally for immediate UI feedback
+      const docIndex = artefacts.value.findIndex(a => a.id === artefactToSummarize.value?.id)
+      if (docIndex !== -1) {
+        artefacts.value[docIndex].summarized = 'Yes'
+        artefacts.value[docIndex].summary = 'Summary available'
+      }
+
       // Refresh the artefacts list to show updated summarization status
       await artefactsStore.fetchArtefacts()
     } else {
@@ -391,6 +407,41 @@ const cancelSummarizeArtefact = () => {
 const viewSummary = (artefact: any) => {
   selectedArtefact.value = artefact
   showSummaryModal.value = true
+}
+
+const downloadArtefact = async (artefact: any) => {
+  if (!artefact || !artefact.id) {
+    const { showError } = useNotification()
+    showError('Cannot download artefact - invalid artefact data')
+    return
+  }
+
+  const { showError, showSuccess, showInfo } = useNotification()
+
+  try {
+    showInfo('Preparing download...')
+
+    // Use the existing viewArtefact method to get the file URL
+    const result = await artefactsStore.viewArtefact(artefact.id)
+
+    if (result.success && result.data.fileUrl) {
+      // Create a temporary link to trigger download
+      const link = document.createElement('a')
+      link.href = result.data.fileUrl
+      link.download = result.data.fileName || artefact.name || 'document'
+      link.target = '_blank' // Open in new tab as fallback
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      showSuccess('Download started successfully')
+    } else {
+      showError(result.message || 'File URL not available for download')
+    }
+  } catch (error: any) {
+    console.error('Download error:', error)
+    showError(error?.message || 'Failed to download artefact')
+  }
 }
 
 // Upload handlers
@@ -556,9 +607,39 @@ watch(
   },
 )
 
+// Watch for auto-processing completion
+watch(
+  () => artefactsStore.getProcessingStatus().allProcessed,
+  (allProcessed) => {
+    // Silent monitoring of processing completion
+  }
+)
+
+// Watch for changes in artefacts data to ensure UI stays updated
+watch(
+  () => artefactsStore.artefacts,
+  (newArtefacts, oldArtefacts) => {
+    // Silent monitoring of artefacts changes for UI updates
+  },
+  { deep: true }
+)
+
 // Initialize everything on mount
 onMounted(async () => {
   await initializePage()
+
+  // Automatically start background processing if there are unprocessed documents
+  await nextTick()
+  const processingStatus = artefactsStore.getProcessingStatus()
+
+  if (processingStatus.unprocessedCount > 0 || processingStatus.pendingCount > 0) {
+    artefactsStore.startAutoProcessing()
+  }
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  artefactsStore.stopAutoProcessing()
 })
 
 useHead({

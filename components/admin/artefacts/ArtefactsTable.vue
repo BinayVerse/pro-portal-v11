@@ -111,11 +111,14 @@
             variant="ghost"
             size="sm"
             icon="heroicons:document-plus"
-            color="green"
-            class="text-green-400 hover:text-green-300"
-            :loading="row.isSummarizing"
+            :color="isAutoProcessing(row.id) ? 'gray' : 'green'"
+            :class="isAutoProcessing(row.id)
+              ? 'text-gray-500 cursor-not-allowed'
+              : 'text-green-400 hover:text-green-300'"
+            :loading="row.isSummarizing || isAutoProcessing(row.id)"
+            :disabled="isAutoProcessing(row.id)"
           >
-            Summarize
+            {{ isAutoProcessing(row.id) ? 'Auto-Processing...' : 'Summarize' }}
           </UButton>
         </div>
       </template>
@@ -178,9 +181,10 @@ interface Artefact {
 
 interface Props {
   artefacts: Artefact[]
+  summarizingDocs?: Set<number>
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 defineEmits<{
   viewArtefact: [artefact: Artefact]
@@ -240,6 +244,10 @@ const columns = [
 ]
 
 // Helper methods
+const isAutoProcessing = (docId: number): boolean => {
+  return props.summarizingDocs?.has(docId) || false
+}
+
 const getCategoryColor = (category: string) => {
   const colors: Record<string, string> = {
     'HR Policy': 'bg-blue-500/20 text-blue-400',

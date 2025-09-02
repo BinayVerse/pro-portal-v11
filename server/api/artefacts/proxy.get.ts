@@ -12,7 +12,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        console.log('Fetching file from URL:', fileUrl)
 
         const response = await axios.get(fileUrl, {
             responseType: 'arraybuffer',
@@ -22,21 +21,12 @@ export default defineEventHandler(async (event) => {
             }
         })
 
-        console.log('File fetched successfully, content type:', response.headers['content-type'])
 
         return {
             data: response.data.toString('base64'),
             contentType: response.headers['content-type'],
         }
     } catch (error: any) {
-        console.error('Error fetching file:', {
-            url: fileUrl,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            message: error.message,
-            code: error.code
-        })
-
         setResponseStatus(event, error.response?.status || 500)
 
         const errorMessage = error.response?.status === 403
