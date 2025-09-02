@@ -854,6 +854,15 @@ export const useArtefactsStore = defineStore('artefacts', {
           this.summarizingDocs.add(doc.id)
           this.attemptedSummarizations.add(doc.id)
 
+          // Show notification when summarization starts
+          if (process.client) {
+            const { showInfo } = useNotification()
+            showInfo(`Auto summarization started for "${doc.name}"`, {
+              title: 'Summarization Started',
+              duration: 4000
+            })
+          }
+
           // Process in background
           this.processSingleSummarization(doc.id).finally(() => {
             this.summarizingDocs.delete(doc.id)
