@@ -12,14 +12,14 @@
       <div class="flex items-center space-x-3">
         <button
           @click="openBulkUplaod"
-          class="bg-dark-800 hover:bg-dark-700 text-white px-4 py-2 rounded-lg border border-dark-700 transition-colors flex items-center space-x-2"
+          :class="[baseButtonClass, 'bg-dark-800 text-white hover:bg-dark-700', 'flex items-center space-x-2']"
         >
           <UIcon name="i-heroicons-cloud-arrow-up" class="w-4 h-4" />
           <span>Bulk Upload</span>
         </button>
         <button
           @click="openAddUserModal"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+          :class="[baseButtonClass, 'bg-blue-600 hover:bg-blue-700 text-white', 'flex items-center space-x-2']"
         >
           <UIcon name="i-heroicons-plus" class="w-4 h-4" />
           <span>Add User</span>
@@ -95,7 +95,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="Search users..."
-              class="block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              :class="baseInputWithIcon"
             />
           </div>
         </div>
@@ -104,7 +104,7 @@
         <div class="sm:w-48">
           <select
             v-model="selectedRole"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            :class="baseInputClass"
           >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
@@ -117,7 +117,7 @@
           <select
             v-model="sortOption"
             @change="applySort"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            :class="baseInputClass"
           >
             <option value="name_asc">Name (A → Z)</option>
             <option value="name_desc">Name (Z → A)</option>
@@ -130,7 +130,7 @@
         <div class="sm:w-48">
           <select
             v-model="selectedStatus"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            :class="baseInputClass"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -240,9 +240,9 @@
             </span>
           </template>
 
-          <!-- <template #tokensUsed-data="{ row }">
+          <template #tokensUsed-data="{ row }">
             {{ formatTokenCount(row.tokensUsed) }}
-          </template> -->
+          </template>
 
           <template #actions-data="{ row }">
             <div class="flex items-center space-x-2">
@@ -603,7 +603,7 @@ interface MappedUser {
   username: string
   lastActive: string
   created: string
-  tokensUsed: string
+  tokensUsed: number
   source: string
   primaryContact?: boolean
   isActive?: boolean
@@ -633,6 +633,9 @@ definePageMeta({
 
 // Store
 const usersStore = useUsersStore()
+const baseInputClass = 'block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+const baseInputWithIcon = 'block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+const baseButtonClass = 'px-4 py-2 rounded-lg border border-dark-700 transition-colors'
 const profileStore = useProfileStore()
 const authStore = useAuthStore()
 
@@ -840,8 +843,8 @@ const getInitials = (name: string): string => {
 
 const formatTokenCount = (tokens: number | string): string => {
   const n = Number(tokens) || 0
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1).replace(/\.0$/, '')}M`
-  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K`
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1).replace(/\.0$/,'')}M`
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/,'')}K`
   return n.toLocaleString()
 }
 
@@ -867,7 +870,7 @@ const mapApiUserToMappedUser = (user: ApiUser): MappedUser => ({
   username: user.email.split('@')[0],
   lastActive: formatDate(user.updated_at),
   created: formatDate(user.added_at || user.created_at),
-  tokensUsed: formatTokenCount(user.tokens_used || 0),
+  tokensUsed: user.tokens_used || 0,
   source: user.source,
   primaryContact: user.primary_contact,
   isActive: (user.status || 'active') === 'active',
