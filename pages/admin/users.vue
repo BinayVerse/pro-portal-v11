@@ -10,13 +10,17 @@
         </p>
       </div>
       <div class="flex items-center space-x-3">
-        <button @click="openBulkUplaod"
-          class="bg-dark-800 hover:bg-dark-700 text-white px-4 py-2 rounded-lg border border-dark-700 transition-colors flex items-center space-x-2">
+        <button
+          @click="openBulkUplaod"
+          class="bg-dark-800 hover:bg-dark-700 text-white px-4 py-2 rounded-lg border border-dark-700 transition-colors flex items-center space-x-2"
+        >
           <UIcon name="i-heroicons-cloud-arrow-up" class="w-4 h-4" />
           <span>Bulk Upload</span>
         </button>
-        <button @click="openAddUserModal"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+        <button
+          @click="openAddUserModal"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+        >
           <UIcon name="i-heroicons-plus" class="w-4 h-4" />
           <span>Add User</span>
         </button>
@@ -87,15 +91,21 @@
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <UIcon name="i-heroicons-magnifying-glass" class="h-5 w-5 text-gray-400" />
             </div>
-            <input v-model="searchQuery" type="text" placeholder="Search users..."
-              class="block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search users..."
+              class="block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
           </div>
         </div>
 
         <!-- Role Filter -->
         <div class="sm:w-48">
-          <select v-model="selectedRole"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+          <select
+            v-model="selectedRole"
+            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          >
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
             <option value="user">User</option>
@@ -104,8 +114,11 @@
 
         <!-- Sort Control (global) -->
         <div class="sm:w-56">
-          <select v-model="sortOption" @change="applySort"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+          <select
+            v-model="sortOption"
+            @change="applySort"
+            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          >
             <option value="name_asc">Name (A → Z)</option>
             <option value="name_desc">Name (Z → A)</option>
             <option value="role_asc">Role (A → Z)</option>
@@ -115,8 +128,10 @@
 
         <!-- Status Filter -->
         <div class="sm:w-48">
-          <select v-model="selectedStatus"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+          <select
+            v-model="selectedStatus"
+            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          >
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -145,8 +160,10 @@
       <div v-else-if="error" class="p-8 text-center">
         <UIcon name="i-heroicons-exclamation-triangle" class="w-12 h-12 text-red-400 mx-auto" />
         <p class="text-red-400 mt-2">Failed to load users</p>
-        <button @click="loadUsers"
-          class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+        <button
+          @click="loadUsers"
+          class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
           Retry
         </button>
       </div>
@@ -163,14 +180,22 @@
               <div class="ml-3">
                 <div class="text-sm font-medium text-white flex items-center gap-2">
                   {{ row.name }}
-                  <UBadge v-if="row.id === authUser?.user_id" size="xs" class="bg-custom1-300 text-[10px]"
-                    :ui="{ rounded: 'rounded-full' }">
+                  <UBadge
+                    v-if="row.id === authUser?.user_id"
+                    size="xs"
+                    class="bg-custom1-300 text-[10px]"
+                    :ui="{ rounded: 'rounded-full' }"
+                  >
                     Self
                   </UBadge>
 
                   <!-- Primary badge -->
-                  <UBadge v-if="row.primaryContact" size="xs" class="bg-custom1-300 text-[10px]"
-                    :ui="{ rounded: 'rounded-full' }">
+                  <UBadge
+                    v-if="row.primaryContact"
+                    size="xs"
+                    class="bg-custom1-300 text-[10px]"
+                    :ui="{ rounded: 'rounded-full' }"
+                  >
                     Primary
                   </UBadge>
                 </div>
@@ -185,23 +210,32 @@
           </template>
 
           <template #role-data="{ row }">
-            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full" :class="{
-              'bg-purple-500/20 text-purple-400': row.role === 'admin',
-              'bg-gray-500/20 text-gray-400': row.role === 'user',
-            }">
+            <span
+              class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+              :class="{
+                'bg-purple-500/20 text-purple-400': row.role === 'admin',
+                'bg-gray-500/20 text-gray-400': row.role === 'user',
+              }"
+            >
               {{ row.role }}
             </span>
           </template>
 
           <template #status-data="{ row }">
-            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" :class="{
-              'bg-green-500/20 text-green-400': row.status === 'active',
-              'bg-red-500/20 text-red-400': row.status === 'inactive',
-            }">
-              <div class="w-1.5 h-1.5 rounded-full mr-1" :class="{
-                'bg-green-400': row.status === 'active',
-                'bg-red-400': row.status === 'inactive',
-              }"></div>
+            <span
+              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+              :class="{
+                'bg-green-500/20 text-green-400': row.status === 'active',
+                'bg-red-500/20 text-red-400': row.status === 'inactive',
+              }"
+            >
+              <div
+                class="w-1.5 h-1.5 rounded-full mr-1"
+                :class="{
+                  'bg-green-400': row.status === 'active',
+                  'bg-red-400': row.status === 'inactive',
+                }"
+              ></div>
               {{ row.status }}
             </span>
           </template>
@@ -212,20 +246,34 @@
 
           <template #actions-data="{ row }">
             <div class="flex items-center space-x-2">
-              <button @click="editUser(row)" class="text-blue-400 hover:text-blue-300 transition-colors"
-                title="Edit user">
+              <button
+                @click="editUser(row)"
+                class="text-blue-400 hover:text-blue-300 transition-colors"
+                title="Edit user"
+              >
                 <UIcon name="i-heroicons-pencil" class="w-4 h-4" />
               </button>
-              <button @click="deleteUser(row)" class="text-red-400 hover:text-red-300 transition-colors"
-                title="Delete user">
+              <button
+                @click="deleteUser(row)"
+                class="text-red-400 hover:text-red-300 transition-colors"
+                title="Delete user"
+              >
                 <UIcon name="i-heroicons-trash" class="w-4 h-4" />
               </button>
             </div>
           </template>
         </UTable>
         <div class="p-4 flex justify-end border-t border-dark-700">
-          <UPagination v-model="page" :total="sortedRows.length" :page-count="pageSize" :show-first="true"
-            :show-last="true" :show-edges="true" size="sm" color="blue" />
+          <UPagination
+            v-model="page"
+            :total="sortedRows.length"
+            :page-count="pageSize"
+            :show-first="true"
+            :show-last="true"
+            :show-edges="true"
+            size="sm"
+            color="blue"
+          />
         </div>
       </div>
     </div>
@@ -247,39 +295,63 @@
         <UForm :state="userForm" :schema="userSchema" @submit="saveUser" class="space-y-4">
           <!-- Name -->
           <UFormGroup label="Name" name="name" required>
-            <UInput v-model="userForm.name" type="text" placeholder="Enter full name" :ui="{
-              base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
-              padding: { sm: 'p-3' },
-            }" />
+            <UInput
+              v-model="userForm.name"
+              type="text"
+              placeholder="Enter full name"
+              :ui="{
+                base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
+                padding: { sm: 'p-3' },
+              }"
+            />
           </UFormGroup>
 
           <!-- Email -->
           <UFormGroup label="Email" name="email" required>
-            <UInput v-model="userForm.email" type="email" placeholder="Enter email address" :ui="{
-              base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
-              padding: { sm: 'p-3' },
-            }" />
+            <UInput
+              v-model="userForm.email"
+              type="email"
+              placeholder="Enter email address"
+              :ui="{
+                base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
+                padding: { sm: 'p-3' },
+              }"
+            />
           </UFormGroup>
 
           <!-- Phone -->
           <UFormGroup name="phone" label="Phone Number">
-            <LibVueTelInput ref="phoneRef" :prop-phone="userForm.phone" placeholder="Your phone number"
-              defaultCountry="us" />
+            <LibVueTelInput
+              ref="phoneRef"
+              :prop-phone="userForm.phone"
+              placeholder="Your phone number"
+              defaultCountry="us"
+            />
           </UFormGroup>
 
           <!-- Role -->
           <UFormGroup label="Role" name="role_id" required>
-            <USelect v-model="userForm.role_id" :options="roleOptions" option-attribute="label" value-attribute="value"
-              placeholder="Select Role" :ui="{
+            <USelect
+              v-model="userForm.role_id"
+              :options="roleOptions"
+              option-attribute="label"
+              value-attribute="value"
+              placeholder="Select Role"
+              :ui="{
                 base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
                 padding: { sm: 'p-3' },
-              }" />
+              }"
+            />
           </UFormGroup>
 
           <!-- Primary Contact -->
           <UFormGroup name="primaryContact">
-            <UCheckbox v-model="userForm.primaryContact" label="Make Primary Contact"
-              :ui="{ base: 'rounded bg-dark-900 border-dark-700' }" @click="handlePrimaryContactToggle" />
+            <UCheckbox
+              v-model="userForm.primaryContact"
+              label="Make Primary Contact"
+              :ui="{ base: 'rounded bg-dark-900 border-dark-700' }"
+              @click="handlePrimaryContactToggle"
+            />
           </UFormGroup>
 
           <!-- Active Status -->
@@ -293,16 +365,27 @@
 
           <!-- Buttons -->
           <div class="flex space-x-3 pt-4">
-            <UButton type="button" @click="closeUserModal" label="Cancel" color="gray"
-              class="flex-1 px-3 py-3 justify-center" />
-            <UButton type="submit" :loading="isEditMode ? updatingUser : addingUser" :label="isEditMode
-              ? updatingUser
-                ? 'Saving...'
-                : 'Save Changes'
-              : addingUser
-                ? 'Adding...'
-                : 'Add User'
-              " class="flex-1 px-3 py-3 justify-center" />
+            <UButton
+              type="button"
+              @click="closeUserModal"
+              label="Cancel"
+              color="gray"
+              class="flex-1 px-3 py-3 justify-center"
+            />
+            <UButton
+              type="submit"
+              :loading="isEditMode ? updatingUser : addingUser"
+              :label="
+                isEditMode
+                  ? updatingUser
+                    ? 'Saving...'
+                    : 'Save Changes'
+                  : addingUser
+                    ? 'Adding...'
+                    : 'Add User'
+              "
+              class="flex-1 px-3 py-3 justify-center"
+            />
           </div>
         </UForm>
       </UCard>
@@ -317,15 +400,25 @@
 
         <p class="text-gray-300 mb-6">
           Are you sure you want to delete
-          <span class="font-semibold">{{ selectedUser?.name }}</span>?<br />
+          <span class="font-semibold">{{ selectedUser?.name }}</span
+          >?<br />
           They will no longer have access but their data will remain in the system.
         </p>
 
         <div class="flex space-x-3">
-          <UButton @click="showDeleteUserModal = false" label="Cancel" color="gray"
-            class="flex-1 px-3 py-3 justify-center" />
-          <UButton @click="confirmDelete" :loading="deletingUser" label="Delete" color="red"
-            class="flex-1 px-3 py-3 justify-center" />
+          <UButton
+            @click="showDeleteUserModal = false"
+            label="Cancel"
+            color="gray"
+            class="flex-1 px-3 py-3 justify-center"
+          />
+          <UButton
+            @click="confirmDelete"
+            :loading="deletingUser"
+            label="Delete"
+            color="red"
+            class="flex-1 px-3 py-3 justify-center"
+          />
         </div>
       </UCard>
     </UModal>
@@ -338,30 +431,46 @@
         </template>
         <p class="text-gray-300 mb-6">{{ primaryContactConfirmMessage }}</p>
         <div class="flex space-x-3">
-          <UButton @click="
-            () => {
-              showPrimaryContactConfirm = false
-              pendingPrimaryContactChange = false
-            }
-          " label="Cancel" color="gray" class="flex-1 px-3 py-3 justify-center" />
-          <UButton @click="confirmPrimaryContactChange" label="Confirm" color="blue"
-            class="flex-1 px-3 py-3 justify-center" />
+          <UButton
+            @click="
+              () => {
+                showPrimaryContactConfirm = false
+                pendingPrimaryContactChange = false
+              }
+            "
+            label="Cancel"
+            color="gray"
+            class="flex-1 px-3 py-3 justify-center"
+          />
+          <UButton
+            @click="confirmPrimaryContactChange"
+            label="Confirm"
+            color="blue"
+            class="flex-1 px-3 py-3 justify-center"
+          />
         </div>
       </UCard>
     </UModal>
 
     <!-- Bulk Upload Modal -->
 
-    <UModal v-model="showForm2" prevent-close class="custom-modal" :ui="{
-      width: 'sm:max-w-3xl xl:max-w-4xl',
-      base: 'max-h-[90vh] overflow-y-auto',
-    }">
-      <UCard :ui="{
-        base: 'h-full flex flex-col',
-        rounded: '',
-        divide: 'divide-y divide-gray-100 dark:divide-gray-800',
-        body: { base: 'grow' },
-      }">
+    <UModal
+      v-model="showForm2"
+      prevent-close
+      class="custom-modal"
+      :ui="{
+        width: 'sm:max-w-3xl xl:max-w-4xl',
+        base: 'max-h-[90vh] overflow-y-auto',
+      }"
+    >
+      <UCard
+        :ui="{
+          base: 'h-full flex flex-col',
+          rounded: '',
+          divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+          body: { base: 'grow' },
+        }"
+      >
         <!-- Modal Header -->
         <template #header>
           <div class="flex items-center justify-between">
@@ -369,12 +478,20 @@
               Upload Bulk Users
             </h3>
             <div class="flex items-center space-x-2">
-              <UButton @click="downloadCsv" icon="i-heroicons:cloud-arrow-down-16-solid"
-                class="download-csv-template-btn text-white bg-custom1-400 hover:bg-custom1-500 focus:outline-none">
+              <UButton
+                @click="downloadCsv"
+                icon="i-heroicons:cloud-arrow-down-16-solid"
+                class="download-csv-template-btn text-white bg-custom1-400 hover:bg-custom1-500 focus:outline-none"
+              >
                 Download CSV Template
               </UButton>
-              <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1"
-                @click="closePreviewForm" />
+              <UButton
+                color="gray"
+                variant="ghost"
+                icon="i-heroicons-x-mark-20-solid"
+                class="-my-1"
+                @click="closePreviewForm"
+              />
             </div>
           </div>
         </template>
@@ -384,20 +501,49 @@
           <!-- File Upload Section -->
           <div
             class="drag-area border-dashed border-2 border-gray-300 rounded-md p-6 flex flex-col items-center justify-center cursor-pointer"
-            @dragover.prevent @dragenter.prevent @drop="handleFileDrop" @click="triggerFileInput">
+            @dragover.prevent
+            @dragenter.prevent
+            @drop="handleFileDrop"
+            @click="triggerFileInput"
+          >
             <p class="text-gray-500">Drag and drop a file here or Click to select a file</p>
             <p class="text-sm text-gray-400 mt-2">Supported file types: CSV files only</p>
             <p class="text-sm text-gray-400 mt-2">
               Note: The WhatsApp number should start with the country code, followed by a valid
               number without any spaces.
             </p>
-            <input type="file" ref="fileInput" class="hidden" @change="handleFileInput" accept=".csv" />
+            <input
+              type="file"
+              ref="fileInput"
+              class="hidden"
+              @change="handleFileInput"
+              accept=".csv"
+            />
           </div>
 
           <!-- File Preview Section -->
           <div v-if="selectedFile" class="file-preview border border-gray-300 rounded-md p-4">
             <h4 class="font-semibold mb-2">Users Preview</h4>
             <div v-html="viewContent" class="users-preview"></div>
+          </div>
+
+          <!-- Inline error summary when validation fails -->
+          <div
+            v-if="errors.length && !hideInline"
+            class="p-4 bg-red-800/10 text-red-800 rounded border border-red-200"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <strong class="block">Invalid or missing user details</strong>
+                <p class="text-sm">Please correct the highlighted fields and try again.</p>
+              </div>
+            </div>
+
+            <ul class="mt-3 list-disc pl-5 text-sm max-h-40 overflow-auto">
+              <li v-for="(err, idx) in errors" :key="idx" class="mb-1">
+                {{ err.errorMessage }}
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -407,8 +553,12 @@
             <UButton @click="closePreviewForm" class="bg-gray-300 hover:bg-gray-400 rounded">
               Cancel
             </UButton>
-            <UButton type="button" :disabled="errors.length > 0 || !selectedFile" @click="handleUpload"
-              class="bg-custom1-400 text-white hover:bg-custom1-500 rounded disabled:opacity-50 disabled:cursor-not-allowed">
+            <UButton
+              type="button"
+              :disabled="errors.length > 0 || !selectedFile || validating"
+              @click="handleUpload"
+              class="bg-custom1-400 text-white hover:bg-custom1-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Upload
             </UButton>
           </div>
@@ -593,7 +743,6 @@ const paginatedUsers = computed(() => {
 })
 
 const roleOptions = computed(() => {
-
   const superAdmin = [{ value: 0, label: 'Super Admin' }]
 
   const mappedRoles = usersStore.roles.map((role: any) => ({
@@ -613,8 +762,7 @@ watch([selectedRole, selectedStatus, searchQuery], () => {
 })
 
 const userSchema = z.object({
-  name: z.string().nonempty('Name is required')
-    .min(5, 'Name should be at least 5 characters long'),
+  name: z.string().nonempty('Name is required').min(5, 'Name should be at least 5 characters long'),
   email: z.string().email('Invalid email address'),
   role_id: z.union([z.string(), z.number()]).refine((val) => val !== '', {
     message: 'Role is required',
@@ -936,6 +1084,8 @@ const isViewMode = ref(true)
 const previewData = ref([])
 const showForm2 = ref(false)
 const viewContent = ref('')
+// Validation in progress flag
+const validating = ref(false)
 
 const openBulkUplaod = () => {
   showForm2.value = true
@@ -966,12 +1116,52 @@ const validateFile = (file?: File) => {
   const type = file.type.toLowerCase()
 
   if (!(ext === 'csv' || type.includes('csv'))) {
-    showError('Invalid file type. Only CSV is allowed.')
+    showInlineError('Invalid file type. Only CSV is allowed.')
     return
   }
 
   selectedFile.value = file
   openPreview(file)
+}
+
+// Show inline error summary and toast
+const showInlineError = (msg: string) => {
+  errors.value = [{ errorMessage: msg }]
+  // Ensure modal is visible so user sees the inline summary
+  showForm2.value = true
+  showPreview.value = false
+  isViewMode.value = false
+  // Re-render previewData without highlights if available
+  if (previewData.value && previewData.value.length) {
+    viewContent.value = renderCSVToHTML(previewData.value)
+  } else {
+    viewContent.value = ''
+  }
+
+  // Use available notification helper(s)
+  try {
+    if (typeof showError === 'function') showError(msg)
+  } catch (e) {}
+}
+
+// Helper to show multiple error toasts sequentially
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
+const hideInline = ref(false)
+const showErrorsSequentially = async (messages: string[], perMs = 3500) => {
+  if (!messages || !messages.length) return
+  // Show modal context
+  showForm2.value = true
+  // Hide inline banner while showing sequential toasts
+  hideInline.value = true
+
+  for (let i = 0; i < messages.length; i++) {
+    try {
+      showError(messages[i], { duration: perMs })
+    } catch (e) {}
+    // wait before showing next
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(perMs + 200)
+  }
 }
 
 const openPreview = async (file: File) => {
@@ -988,7 +1178,7 @@ const openPreview = async (file: File) => {
     })
 
     if (!parsedData || parsedData.length === 0) {
-      throw new Error("The uploaded CSV file is empty. Please upload a file with user data.")
+      throw new Error('The uploaded CSV file is empty. Please upload a file with user data.')
     }
 
     // Render the data into a preview and display it
@@ -997,6 +1187,7 @@ const openPreview = async (file: File) => {
     showForm2.value = true
 
     // Call validation API
+    validating.value = true
     const validationResponse = await usersStore.uploadAndValidateJson(parsedData as any)
 
     if (validationResponse.errors && validationResponse.errors.length > 0) {
@@ -1010,13 +1201,42 @@ const openPreview = async (file: File) => {
         }),
       )
 
-      // Show toast for each error
+      // Group errors by row so we don't repeat 'Row X' for every field
+      const grouped: Record<number, string[]> = {}
       validationResponse.errors.forEach((error: { rowNumber: number; invalidFields: any[] }) => {
+        const row = error.rowNumber
+        grouped[row] = grouped[row] || []
         error.invalidFields.forEach((field: { field: any; message: any }) => {
-          const errorMessage = `Row: ${error.rowNumber} - ${field.field}: ${field.message}`
-          showError(errorMessage)
+          grouped[row].push(`${field.field}: ${field.message}`)
         })
       })
+
+      // Build concatenated message with each message on a new line and rows grouped
+      const rowKeys = Object.keys(grouped)
+        .map((k) => Number(k))
+        .sort((a, b) => a - b)
+
+      // Build per-row blocks where each field appears on a new line.
+      // Between rows, insert two new lines (i.e., one blank line) as requested.
+      const rowBlocks: string[] = []
+      rowKeys.forEach((row) => {
+        const fields = grouped[row]
+        if (!fields || !fields.length) return
+
+        // Compose block: Row X:\nfield1\nfield2...
+        const block = `Row ${row}:\n${fields.join('\n')}`
+        rowBlocks.push(block)
+      })
+
+      // Join rows with two newlines between them
+      const concatenated = rowBlocks.join('\n\n')
+      // duration based on number of lines, capped
+      const duration = Math.min(20000, rowBlocks.length * 2500)
+
+      // Show single toast with concatenated message
+      try {
+        showError(concatenated, { duration })
+      } catch (e) {}
 
       const errorRows = validationResponse.errors.map(
         (error: { rowNumber: number }) => error.rowNumber - 1,
@@ -1044,33 +1264,35 @@ const openPreview = async (file: File) => {
     }
   } catch (error: any) {
     const errorMsg =
-      error.message === "The uploaded CSV file is empty. Please upload a file with user data."
+      error.message === 'The uploaded CSV file is empty. Please upload a file with user data.'
         ? error.message
-        : "An error occurred while validating the file. Please check your CSV and try again."
+        : 'An error occurred while validating the file. Please check your CSV and try again.'
 
-    showError(errorMsg)
+    showInlineError(errorMsg)
     errors.value = [
       {
         errorMessage: errorMsg,
       },
     ]
-    showPreview.value = false   // don’t show preview for errors
+    showPreview.value = false // don’t show preview for errors
     isViewMode.value = false
     viewContent.value = renderCSVToHTML(previewData.value)
+  } finally {
+    validating.value = false
   }
 }
 
 const handleUpload = async () => {
   if (!selectedFile.value) {
-    showError('Please select a file to upload.')
+    showInlineError('Please select a file to upload.')
     return
   }
   if (errors.value.length > 0) {
-    showError('Please fix the errors before uploading.')
+    showInlineError('Please fix the errors before uploading.')
     return
   }
   if (!previewData.value.length) {
-    showError('No data to upload.')
+    showInlineError('No data to upload.')
     return
   }
 
@@ -1080,10 +1302,10 @@ const handleUpload = async () => {
       showSuccess(response.message || 'Users imported successfully!')
       closePreviewForm()
     } else {
-      showError(response.message || 'Failed to import data.')
+      showInlineError(response.message || 'Failed to import data.')
     }
   } catch (err: any) {
-    showError(`Unexpected error: ${err.message}`)
+    showInlineError(`Unexpected error: ${err.message}`)
   }
 }
 
@@ -1131,6 +1353,7 @@ const closePreviewForm = () => {
   previewData.value = []
   viewContent.value = ''
   errors.value = []
+  hideInline.value = false
 }
 
 // Lifecycle
