@@ -62,6 +62,14 @@
       </div>
     </div>
 
+    <!-- Show error banner if any -->
+    <!-- <div v-if="integrationsStore.getError" class="mb-4">
+      <div class="p-3 rounded-lg bg-red-600/10 border border-red-600 text-red-400 flex justify-between items-start">
+        <div class="text-sm" v-html="integrationsStore.getError"></div>
+        <button @click="integrationsStore.setError(null)" class="text-red-400 ml-4">Close</button>
+      </div>
+    </div> -->
+
     <!-- Main Content Grid -->
     <div class="grid lg:grid-cols-2 gap-6">
       <!-- Workspace Configuration -->
