@@ -78,9 +78,9 @@
       </div>
     </div>
 
-    <!-- Search and Filters -->
+    <!-- Search, Filters and Sort -->
     <div class="bg-dark-800 rounded-lg p-6 border border-dark-700">
-      <div class="flex flex-col sm:flex-row gap-4">
+      <div class="flex flex-col sm:flex-row gap-4 items-center">
         <!-- Search Input -->
         <div class="flex-1">
           <div class="relative">
@@ -99,6 +99,17 @@
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
             <option value="user">User</option>
+          </select>
+        </div>
+
+        <!-- Sort Control (global) -->
+        <div class="sm:w-56">
+          <select v-model="sortOption" @change="applySort"
+            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+            <option value="name_asc">Name (A → Z)</option>
+            <option value="name_desc">Name (Z → A)</option>
+            <option value="role_asc">Role (A → Z)</option>
+            <option value="role_desc">Role (Z → A)</option>
           </select>
         </div>
 
@@ -538,6 +549,17 @@ const sort = ref<{ column: string; direction: 'asc' | 'desc' | null }>({
   column: 'name',
   direction: 'asc',
 })
+
+// UI model for the sort select control
+const sortOption = ref('name_asc')
+
+const applySort = () => {
+  const [col, dir] = sortOption.value.split('_')
+  sort.value = { column: col, direction: dir as 'asc' | 'desc' }
+}
+
+// Ensure initial sort is applied
+applySort()
 
 const sortedRows = computed(() => {
   if (!sort.value.column || !sort.value.direction) return filteredUsers.value
