@@ -285,7 +285,7 @@
               <UIcon name="heroicons:qr-code" class="w-5 h-5 text-gray-400" />
               <h2 class="text-lg font-semibold text-white">WhatsApp QR Code</h2>
             </div>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2" v-if="!isEditMode">
               <UButton
                 v-if="connectionStatus.isConnected && integrationsStore.qrCode"
                 @click="refreshQrCode"
@@ -313,7 +313,11 @@
                 variant="ghost"
               >
                 <span class="flex items-center space-x-2">
-                  <UIcon v-if="!integrationsStore.qrDownloading" name="i-heroicons:arrow-down-tray" class="w-4 h-4" />
+                  <UIcon
+                    v-if="!integrationsStore.qrDownloading"
+                    name="i-heroicons:arrow-down-tray"
+                    class="w-4 h-4"
+                  />
                   <span>Download QR</span>
                 </span>
               </UButton>
@@ -325,7 +329,10 @@
           <!-- QR Code -->
           <div class="flex flex-col items-center space-y-4">
             <div class="bg-white p-4 rounded-lg">
-              <div class="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div
+                v-if="!isEditMode"
+                class="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center"
+              >
                 <!-- Loading state -->
                 <div v-if="integrationsStore.loading" class="text-center">
                   <div
@@ -352,6 +359,17 @@
                         : 'Setup WhatsApp to generate QR code'
                     }}
                   </p>
+                </div>
+              </div>
+
+              <div
+                v-else
+                class="w-48 h-48 bg-gray-800/60 rounded-lg flex items-center justify-center"
+              >
+                <div class="text-center">
+                  <UIcon name="heroicons:ban" class="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p class="text-sm text-gray-400">QR code hidden while editing</p>
+                  <p class="text-xs text-gray-500 mt-1">Save your changes to view the QR code</p>
                 </div>
               </div>
             </div>
