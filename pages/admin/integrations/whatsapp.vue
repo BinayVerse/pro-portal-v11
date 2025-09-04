@@ -41,9 +41,11 @@
           @click="showDisconnectModal = true"
           :loading="integrationsStore.loading"
           color="red"
-          icon="heroicons:link-slash"
         >
-          Disconnect
+          <span class="flex items-center space-x-2">
+            <UIcon v-if="!integrationsStore.loading" name="heroicons:link-slash" class="w-4 h-4" />
+            <span>Disconnect</span>
+          </span>
         </UButton>
       </div>
     </div>
@@ -316,17 +318,35 @@
               <UIcon name="heroicons:qr-code" class="w-5 h-5 text-gray-400" />
               <h2 class="text-lg font-semibold text-white">WhatsApp QR Code</h2>
             </div>
-            <UButton
-              v-if="connectionStatus.isConnected && integrationsStore.qrCode"
-              @click="refreshQrCode"
-              :loading="integrationsStore.loading"
-              size="sm"
-              color="gray"
-              variant="ghost"
-              icon="heroicons:arrow-path"
-            >
-              Refresh
-            </UButton>
+            <div class="flex items-center space-x-2">
+              <UButton
+                v-if="connectionStatus.isConnected && integrationsStore.qrCode"
+                @click="refreshQrCode"
+                :loading="integrationsStore.loading"
+                size="sm"
+                color="gray"
+                variant="ghost"
+              >
+                <span class="flex items-center space-x-2">
+                  <UIcon v-if="!integrationsStore.loading" name="heroicons:arrow-path" class="w-4 h-4" />
+                  <span>Refresh</span>
+                </span>
+              </UButton>
+
+              <UButton
+                v-if="connectionStatus.isConnected && integrationsStore.qrCode"
+                @click="downloadQrCode"
+                :loading="isDownloading"
+                size="sm"
+                color="gray"
+                variant="ghost"
+              >
+                <span class="flex items-center space-x-2">
+                  <UIcon v-if="!isDownloading" name="i-heroicons:arrow-down-tray" class="w-4 h-4" />
+                  <span>Download QR</span>
+                </span>
+              </UButton>
+            </div>
           </div>
         </template>
 
@@ -608,6 +628,8 @@ const disconnectWhatsApp = async () => {
   }
 }
 
+const isDownloading = ref(false)
+
 const refreshQrCode = async () => {
   try {
     await integrationsStore.fetchQrCode()
@@ -615,6 +637,87 @@ const refreshQrCode = async () => {
   } catch (error) {
     showError('Failed to refresh QR code. Please try again.')
     console.error('Error refreshing QR code:', error)
+  }
+}
+
+const downloadQrCode = async () => {
+  if (!integrationsStore.qrCode) {
+    showError('No QR code available to download.')
+    return
+  }
+
+  isDownloading.value = true
+
+  // integrationsStore.qrCode is a signed URL (from server)
+  const signedUrl = integrationsStore.qrCode
+
+  try {
+    const response = await fetch(signedUrl)
+    if (!response.ok) throw new Error(`Failed to fetch QR code: ${response.statusText}`)
+
+    const blob = await response.blob()
+
+    // Derive filename from business number if available
+    const biz = integrationsStore.whatsappDetails?.business_whatsapp_number || 'whatsapp'
+    const safeBiz = biz.replace(/[^a-z0-9_-]/gi, '_')
+    const filename = `${safeBiz}_wp_qr_code.png`
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+
+    showSuccess('QR code downloaded successfully.')
+    isDownloading.value = false
+    return
+  } catch (err) {
+    // Signed URL fetch failed (likely CORS) — fall back to server proxy
+  }
+
+  try {
+    // Call server-side proxy endpoint that fetches object from S3 and returns base64
+    const proxyResp = await $fetch('/api/integrations/whatsapp/qr-code-download', {
+      headers: integrationsStore.getAuthHeaders(),
+    })
+    if (!proxyResp || !proxyResp.data) throw new Error('Invalid proxy response')
+
+    const { base64, contentType } = proxyResp.data as { base64: string; contentType: string }
+    const byteCharacters = atob(base64)
+    const byteArrays: Uint8Array[] = []
+
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+      const slice = byteCharacters.slice(offset, offset + 512)
+      const byteNumbers = new Array(slice.length)
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i)
+      }
+      byteArrays.push(new Uint8Array(byteNumbers))
+    }
+
+    const blob = new Blob(byteArrays, { type: contentType })
+    const biz = integrationsStore.whatsappDetails?.business_whatsapp_number || 'whatsapp'
+    const safeBiz = biz.replace(/[^a-z0-9_-]/gi, '_')
+    const filename = `${safeBiz}_wp_qr_code.png`
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+
+    showSuccess('QR code downloaded successfully (via proxy).')
+  } catch (proxyErr: any) {
+    console.error('Proxy download failed:', proxyErr)
+    showError('Error downloading QR code, please try again.')
+  } finally {
+    isDownloading.value = false
   }
 }
 
