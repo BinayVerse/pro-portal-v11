@@ -11,10 +11,10 @@
 
     <!-- UTable -->
     <UTable
-      :rows="artefacts"
+      :rows="tableRows"
       :columns="columns"
       :loading="loading"
-      :sort="{ column: 'lastUpdated', direction: 'desc' }"
+      v-model:sort="tableSort"
       class="divide-y divide-dark-700"
       :ui="{
         wrapper: 'relative overflow-x-auto',
@@ -49,8 +49,8 @@
             <UIcon name="heroicons:document-text" class="w-5 h-5 text-blue-400" />
           </div>
           <div class="ml-3">
-            <div class="text-sm font-medium text-white">{{ row.name }}</div>
-            <div class="text-sm text-gray-400">{{ row.description }}</div>
+            <div class="text-sm font-medium text-white max-w-[24rem] truncate" :title="row.name">{{ row.name }}</div>
+            <div class="text-sm text-gray-400 max-w-[28rem] truncate">{{ row.description }}</div>
           </div>
         </div>
       </template>
@@ -124,6 +124,13 @@
       </template>
 
       <!-- Actions column with action buttons -->
+      <template #uploadedOn-data="{ row }">
+        <div class="flex flex-col">
+          <div class="text-sm font-medium text-white truncate" :title="row.uploadedBy">{{ row.uploadedBy }}</div>
+          <div class="text-xs text-gray-400 mt-1">{{ formatDateTime(row.lastUpdated) }}</div>
+        </div>
+      </template>
+
       <template #actions-data="{ row }">
         <div class="flex items-center space-x-2">
           <UTooltip text="View Artefact">
@@ -134,16 +141,16 @@
               <UIcon name="heroicons:eye" class="w-4 h-4" />
             </button>
           </UTooltip>
-          <UTooltip :text="row.status === 'processed' ? 'Document is already processed' : 'Reprocess Artefact'">
+          <UTooltip :text="row.status === 'processing' ? 'Document is processing' : (row.status === 'processed' ? 'Document is already processed' : 'Reprocess Artefact')">
             <button
-              @click="row.status === 'processed' ? null : $emit('reprocessArtefact', row)"
+              @click="(row.status === 'processed' || row.status === 'processing') ? null : $emit('reprocessArtefact', row)"
               :class="[
                 'transition-colors',
-                row.status === 'processed'
+                (row.status === 'processed' || row.status === 'processing')
                   ? 'text-gray-500 cursor-not-allowed opacity-50'
                   : 'text-green-400 hover:text-green-300'
               ]"
-              :disabled="row.status === 'processed'"
+              :disabled="row.status === 'processed' || row.status === 'processing'"
             >
               <UIcon name="heroicons:arrow-path-rounded-square" class="w-4 h-4" />
             </button>
@@ -163,7 +170,8 @@
 </template>
 
 <script setup lang="ts">
-import { withDefaults } from 'vue'
+import { withDefaults, computed, ref } from 'vue'
+import { formatDateTime } from '~/utils'
 interface Artefact {
   id: number
   name: string
@@ -226,13 +234,8 @@ const columns = [
     sortable: true,
   },
   {
-    key: 'uploadedBy',
-    label: 'Uploaded By',
-    sortable: true,
-  },
-  {
-    key: 'lastUpdated',
-    label: 'Last Updated',
+    key: 'uploadedOn',
+    label: 'Uploaded On',
     sortable: true,
   },
   {
@@ -251,6 +254,18 @@ const columns = [
 const isAutoProcessing = (docId: number): boolean => {
   return props.summarizingDocs?.has(docId) || false
 }
+
+// Table sort state (persist across row updates)
+const tableSort = ref({ column: 'uploadedOn', direction: 'desc' })
+
+// Derived rows with sortable date field
+const tableRows = computed(() => {
+  return (props.artefacts || []).map((r: any) => ({
+    ...r,
+    // numeric timestamp used for sorting
+    uploadedOn: r.lastUpdated ? new Date(r.lastUpdated).getTime() : 0,
+  }))
+})
 
 const getCategoryColor = (category: string) => {
   const colors: Record<string, string> = {
