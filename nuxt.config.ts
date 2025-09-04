@@ -63,6 +63,7 @@ export default defineNuxtConfig({
 
   // Icon Configuration
   icon: {
+    autoInstall: true,
     serverBundle: {
       collections: ['heroicons', 'mdi'],
     },
