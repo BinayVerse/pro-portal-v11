@@ -170,7 +170,7 @@
 
       <!-- Table Content -->
       <div v-else>
-        <UTable :columns="columns" :rows="paginatedUsers" class="text-white">
+        <UTable :columns="columns" :rows="paginatedUsers" v-model:sort="sort" class="text-white">
           <!-- Custom cells -->
           <template #name-data="{ row }">
             <div class="flex items-center">
@@ -604,6 +604,7 @@ interface MappedUser {
   lastActive: string
   created: string
   tokensUsed: number
+  tokensUsedRaw: number
   source: string
   primaryContact?: boolean
   isActive?: boolean
@@ -718,17 +719,47 @@ const sortedRows = computed(() => {
   if (!sort.value.column || !sort.value.direction) return filteredUsers.value
 
   return [...filteredUsers.value].sort((a, b) => {
-    const col = sort.value.column as keyof typeof a
+    const colKey = sort.value.column || 'name'
     const dir = sort.value.direction === 'asc' ? 1 : -1
 
-    let aVal = a[col]
-    let bVal = b[col]
-
-    // Case-insensitive string comparison
-    if (typeof aVal === 'string' && typeof bVal === 'string') {
-      aVal = aVal.toLowerCase()
-      bVal = bVal.toLowerCase()
+    // Map column keys to actual object properties
+    const fieldMap: Record<string, string> = {
+      name: 'name',
+      contact: 'email',
+      role: 'role',
+      status: 'status',
+      lastActive: 'lastActive',
+      created: 'created',
+      source: 'source',
+      tokensUsed: 'tokensUsedRaw',
     }
+
+    const field = (fieldMap as any)[colKey] || colKey
+
+    let aVal: any = (a as any)[field]
+    let bVal: any = (b as any)[field]
+
+    // Special-case numeric sorting for tokensUsedRaw to avoid formatted-string issues
+    if (field === 'tokensUsedRaw') {
+      const aNum = Number((a as any).tokensUsedRaw) || 0
+      const bNum = Number((b as any).tokensUsedRaw) || 0
+      if (aNum < bNum) return -1 * dir
+      if (aNum > bNum) return 1 * dir
+      return 0
+    }
+
+    // If both values can be parsed as numbers, compare numerically
+    const aNum = Number(aVal)
+    const bNum = Number(bVal)
+    if (Number.isFinite(aNum) && Number.isFinite(bNum)) {
+      if (aNum < bNum) return -1 * dir
+      if (aNum > bNum) return 1 * dir
+      return 0
+    }
+
+    // Case-insensitive string comparison fallback
+    aVal = aVal ? String(aVal).toLowerCase() : ''
+    bVal = bVal ? String(bVal).toLowerCase() : ''
 
     if (aVal < bVal) return -1 * dir
     if (aVal > bVal) return 1 * dir
@@ -761,6 +792,10 @@ const roleOptions = computed(() => {
 })
 
 watch([selectedRole, selectedStatus, searchQuery], () => {
+  page.value = 1
+})
+
+watch(sort, () => {
   page.value = 1
 })
 
@@ -848,6 +883,27 @@ const formatTokenCount = (tokens: number | string): string => {
   return n.toLocaleString()
 }
 
+const parseFormattedTokens = (val: number | string | undefined): number => {
+  if (val === undefined || val === null) return 0
+  if (typeof val === 'number') return val
+  let s = String(val).trim()
+  if (!s) return 0
+  // Remove commas and spaces
+  s = s.replace(/,/g, '').replace(/\s+/g, '')
+  const lastChar = s.slice(-1).toUpperCase()
+  if (lastChar === 'M') {
+    const num = parseFloat(s.slice(0, -1))
+    return Number.isFinite(num) ? Math.round(num * 1000000) : 0
+  }
+  if (lastChar === 'K') {
+    const num = parseFloat(s.slice(0, -1))
+    return Number.isFinite(num) ? Math.round(num * 1000) : 0
+  }
+  // fallback parse number
+  const num = parseFloat(s)
+  return Number.isFinite(num) ? Math.round(num) : 0
+}
+
 const mapRole = (roleId: number, roleName?: string): string => {
   if (roleName) return roleName.toLowerCase()
 
@@ -870,7 +926,8 @@ const mapApiUserToMappedUser = (user: ApiUser): MappedUser => ({
   username: user.email.split('@')[0],
   lastActive: formatDate(user.updated_at),
   created: formatDate(user.added_at || user.created_at),
-  tokensUsed: user.tokens_used || 0,
+  tokensUsedRaw: parseFormattedTokens(user.tokens_used),
+  tokensUsed: parseFormattedTokens(user.tokens_used),
   source: user.source,
   primaryContact: user.primary_contact,
   isActive: (user.status || 'active') === 'active',
