@@ -96,7 +96,13 @@ export default defineEventHandler(async (event) => {
     setResponseStatus(event, 500);
     return {
       status: 'error',
-      message: 'We\'re experiencing technical difficulties. Please try again in a few moments.',
+      message:
+        typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof (error as any).message === 'string'
+          ? (error as any).message
+          : 'We\'re experiencing technical difficulties. Please try again in a few moments.',
     };
   }
 });

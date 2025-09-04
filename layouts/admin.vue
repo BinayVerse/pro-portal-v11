@@ -170,27 +170,38 @@
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '~/stores/auth/index'
+
 const route = useRoute()
 const integrationsOpen = ref(true)
+const auth = useAuthStore()
 
 const profileItems = [
   [
     {
       label: 'My Account',
       icon: 'heroicons:user',
-      click: () => {},
+      click: () => navigateTo('/profile'),
     },
     {
       label: 'Change Password',
       icon: 'heroicons:key',
-      click: () => {},
+      click: () => navigateTo('/update-password'),
     },
   ],
   [
     {
       label: 'Logout',
       icon: 'heroicons:arrow-right-on-rectangle',
-      click: () => navigateTo('/login'),
+      click: async () => {
+        try {
+          await auth.signOut()
+        } catch (e) {
+          console.error('Logout failed from profile dropdown', e)
+          // Fallback navigation
+          navigateTo('/login')
+        }
+      },
     },
   ],
 ]
