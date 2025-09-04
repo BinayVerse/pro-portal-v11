@@ -240,9 +240,9 @@
             </span>
           </template>
 
-          <template #tokensUsed-data="{ row }">
-            {{ row.tokensUsed.toLocaleString() }}
-          </template>
+          <!-- <template #tokensUsed-data="{ row }">
+            {{ formatTokenCount(row.tokensUsed) }}
+          </template> -->
 
           <template #actions-data="{ row }">
             <div class="flex items-center space-x-2">
@@ -603,7 +603,7 @@ interface MappedUser {
   username: string
   lastActive: string
   created: string
-  tokensUsed: number
+  tokensUsed: string
   source: string
   primaryContact?: boolean
   isActive?: boolean
@@ -838,6 +838,13 @@ const getInitials = (name: string): string => {
     .slice(0, 2)
 }
 
+const formatTokenCount = (tokens: number | string): string => {
+  const n = Number(tokens) || 0
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1).replace(/\.0$/, '')}M`
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K`
+  return n.toLocaleString()
+}
+
 const mapRole = (roleId: number, roleName?: string): string => {
   if (roleName) return roleName.toLowerCase()
 
@@ -860,7 +867,7 @@ const mapApiUserToMappedUser = (user: ApiUser): MappedUser => ({
   username: user.email.split('@')[0],
   lastActive: formatDate(user.updated_at),
   created: formatDate(user.added_at || user.created_at),
-  tokensUsed: user.tokens_used || 0,
+  tokensUsed: formatTokenCount(user.tokens_used || 0),
   source: user.source,
   primaryContact: user.primary_contact,
   isActive: (user.status || 'active') === 'active',

@@ -30,19 +30,26 @@ export default defineEventHandler(async (event) => {
   const orgId = userOrg.rows[0].org_id
 
   const users = await query(
-    `SELECT 
-      u.user_id, 
-      u.name, 
-      u.email, 
-      COALESCE(u.contact_number, '-') AS contact_number, 
-      u.role_id, 
+    `SELECT
+      u.user_id,
+      u.name,
+      u.email,
+      COALESCE(u.contact_number, '-') AS contact_number,
+      u.role_id,
       u.added_by,
-      u.primary_contact, 
-      o.org_name, 
+      u.primary_contact,
+      o.org_name,
       r.role_name AS role,
       u.updated_at,
       u.created_at,
-      CASE 
+      -- Calculate tokens used by this user for the organization within token_cost_calculation
+      COALESCE(
+        (
+          SELECT SUM(t.total_tokens) FROM token_cost_calculation t WHERE t.user_id = u.user_id AND t.org_id = $1
+        ),
+        0
+      ) AS tokens_used,
+      CASE
         WHEN u.added_by = 'slack_auto_provision' THEN 'Slack'
         WHEN u.added_by = 'teams_auto_provision' THEN 'Teams'
         ELSE 'Manual'
