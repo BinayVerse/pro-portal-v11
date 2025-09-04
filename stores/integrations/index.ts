@@ -19,6 +19,7 @@ export const useIntegrationsStore = defineStore('integrations', {
     whatsappStatus: true,
     businessWhatsAppNumber: '' as string,
     qrCode: '' as string,
+    qrDownloading: false,
   }),
 
   getters: {
@@ -712,6 +713,99 @@ export const useIntegrationsStore = defineStore('integrations', {
         throw error;
       } finally {
         this.loading = false;
+      }
+    },
+
+    async downloadQrCode() {
+      // Handles downloading the QR code (signed URL or proxy) and triggers browser download
+      try {
+        this.qrDownloading = true;
+        if (!this.qrCode) {
+          throw new Error('No QR code available to download.');
+        }
+
+        const signedUrl = this.qrCode;
+
+        try {
+          // Try fetching the signed URL directly
+          const blob = await $fetch(signedUrl, { responseType: 'blob' as const });
+
+          const biz = this.whatsappDetails?.business_whatsapp_number || 'whatsapp';
+          const safeBiz = biz.replace(/[^a-z0-9_-]/gi, '_');
+          const filename = `${safeBiz}_wp_qr_code.png`;
+
+          const url = window.URL.createObjectURL(blob as Blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+
+          if (process.client) {
+            const { showSuccess } = useNotification();
+            showSuccess('QR code downloaded successfully.');
+          }
+
+          return;
+        } catch (err) {
+          // Signed URL fetch failed (likely CORS) — fall back to server proxy
+          // Continue to proxy flow below
+        }
+
+        // Proxy fallback
+        try {
+          const proxyResp = await $fetch('/api/integrations/whatsapp/qr-code-download', {
+            headers: this.getAuthHeaders(),
+          });
+
+          if (!proxyResp || !proxyResp.data) throw new Error('Invalid proxy response');
+
+          const { base64, contentType } = proxyResp.data as { base64: string; contentType: string };
+          const byteCharacters = atob(base64);
+          const byteArrays: Uint8Array[] = [];
+
+          for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+            const slice = byteCharacters.slice(offset, offset + 512);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+              byteNumbers[i] = slice.charCodeAt(i);
+            }
+            byteArrays.push(new Uint8Array(byteNumbers));
+          }
+
+          const blob = new Blob(byteArrays, { type: contentType });
+          const biz = this.whatsappDetails?.business_whatsapp_number || 'whatsapp';
+          const safeBiz = biz.replace(/[^a-z0-9_-]/gi, '_');
+          const filename = `${safeBiz}_wp_qr_code.png`;
+
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+
+          if (process.client) {
+            const { showSuccess } = useNotification();
+            showSuccess('QR code downloaded successfully (via proxy).');
+          }
+        } catch (proxyErr: any) {
+          if (!await this.handleAuthError(proxyErr)) {
+            this.error = this.handleError(proxyErr, 'Error downloading QR code');
+
+            if (process.client) {
+              const { showError } = useNotification();
+              showError(this.error);
+            }
+          }
+          throw proxyErr;
+        }
+      } finally {
+        this.qrDownloading = false;
       }
     },
   },

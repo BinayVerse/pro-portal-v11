@@ -41,11 +41,9 @@
           @click="showDisconnectModal = true"
           :loading="integrationsStore.loading"
           color="red"
+          icon="heroicons:link-slash"
         >
-          <span class="flex items-center space-x-2">
-            <UIcon v-if="!integrationsStore.loading" name="heroicons:link-slash" class="w-4 h-4" />
-            <span>Disconnect</span>
-          </span>
+          Disconnect
         </UButton>
       </div>
     </div>
@@ -254,58 +252,27 @@
             </UFormGroup>
 
             <!-- Webhook Configuration Help -->
-            <!-- <div
-              v-if="connectionStatus.isConnected || isEditMode"
-              class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+            <div
+              class="mt-6 p-4 pt-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
             >
               <div class="space-y-3">
-                <div class="flex items-start space-x-2">
-                  <UIcon
-                    name="heroicons:light-bulb"
-                    class="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"
-                  />
-                  <div class="space-y-2">
-                    <p class="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                      Webhook Configuration Steps:
-                    </p>
-                    <ol
-                      class="text-sm text-blue-600 dark:text-blue-400 space-y-1 ml-4 list-decimal"
-                    >
-                      <li>Copy the webhook URL above using the copy button</li>
-                      <li>Go to your Meta Developer Account</li>
-                      <li>Navigate to WhatsApp → Configuration → Webhook</li>
-                      <li>Paste the webhook URL and configure your events</li>
-                      <li>Use 'webhook' as the verify token</li>
-                    </ol>
-                  </div>
-                </div>
-
-                <div class="border-t border-blue-200 dark:border-blue-700 pt-3">
-                  <p class="text-xs text-blue-600 dark:text-blue-400 mb-3">
-                    Need help? Check our resources below:
-                  </p>
-                  <div class="flex flex-wrap gap-4">
-                    <NuxtLink
-                      to="https://storage.googleapis.com/provento-guide-documents/MetaApp_Setup.pdf"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center space-x-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline transition-colors"
-                    >
-                      <UIcon name="heroicons:document-text" class="w-4 h-4" />
-                      <span>Setup Guidelines</span>
-                    </NuxtLink>
-
-                    <NuxtLink
-                      to="/contact"
-                      class="inline-flex items-center space-x-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline transition-colors"
-                    >
-                      <UIcon name="heroicons:calendar-days" class="w-4 h-4" />
-                      <span>Book a Meeting</span>
-                    </NuxtLink>
-                  </div>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                  Need help? Check our resources below:
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <NuxtLink
+                    to="https://storage.googleapis.com/provento-guide-documents/MetaApp_Setup.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center space-x-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline transition-colors"
+                  >
+                    <UIcon name="heroicons:document-text" class="w-4 h-4" />
+                    <span>Setup Guidelines</span>
+                  </NuxtLink>
+                  to configure your Meta account
                 </div>
               </div>
-            </div> -->
+            </div>
           </div>
         </div>
       </UCard>
@@ -328,7 +295,11 @@
                 variant="ghost"
               >
                 <span class="flex items-center space-x-2">
-                  <UIcon v-if="!integrationsStore.loading" name="heroicons:arrow-path" class="w-4 h-4" />
+                  <UIcon
+                    v-if="!integrationsStore.loading"
+                    name="heroicons:arrow-path"
+                    class="w-4 h-4"
+                  />
                   <span>Refresh</span>
                 </span>
               </UButton>
@@ -336,13 +307,13 @@
               <UButton
                 v-if="connectionStatus.isConnected && integrationsStore.qrCode"
                 @click="downloadQrCode"
-                :loading="isDownloading"
+                :loading="integrationsStore.qrDownloading"
                 size="sm"
                 color="gray"
                 variant="ghost"
               >
                 <span class="flex items-center space-x-2">
-                  <UIcon v-if="!isDownloading" name="i-heroicons:arrow-down-tray" class="w-4 h-4" />
+                  <UIcon v-if="!integrationsStore.qrDownloading" name="i-heroicons:arrow-down-tray" class="w-4 h-4" />
                   <span>Download QR</span>
                 </span>
               </UButton>
@@ -628,8 +599,6 @@ const disconnectWhatsApp = async () => {
   }
 }
 
-const isDownloading = ref(false)
-
 const refreshQrCode = async () => {
   try {
     await integrationsStore.fetchQrCode()
@@ -641,83 +610,11 @@ const refreshQrCode = async () => {
 }
 
 const downloadQrCode = async () => {
-  if (!integrationsStore.qrCode) {
-    showError('No QR code available to download.')
-    return
-  }
-
-  isDownloading.value = true
-
-  // integrationsStore.qrCode is a signed URL (from server)
-  const signedUrl = integrationsStore.qrCode
-
   try {
-    const response = await fetch(signedUrl)
-    if (!response.ok) throw new Error(`Failed to fetch QR code: ${response.statusText}`)
-
-    const blob = await response.blob()
-
-    // Derive filename from business number if available
-    const biz = integrationsStore.whatsappDetails?.business_whatsapp_number || 'whatsapp'
-    const safeBiz = biz.replace(/[^a-z0-9_-]/gi, '_')
-    const filename = `${safeBiz}_wp_qr_code.png`
-
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-
-    showSuccess('QR code downloaded successfully.')
-    isDownloading.value = false
-    return
-  } catch (err) {
-    // Signed URL fetch failed (likely CORS) — fall back to server proxy
-  }
-
-  try {
-    // Call server-side proxy endpoint that fetches object from S3 and returns base64
-    const proxyResp = await $fetch('/api/integrations/whatsapp/qr-code-download', {
-      headers: integrationsStore.getAuthHeaders(),
-    })
-    if (!proxyResp || !proxyResp.data) throw new Error('Invalid proxy response')
-
-    const { base64, contentType } = proxyResp.data as { base64: string; contentType: string }
-    const byteCharacters = atob(base64)
-    const byteArrays: Uint8Array[] = []
-
-    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-      const slice = byteCharacters.slice(offset, offset + 512)
-      const byteNumbers = new Array(slice.length)
-      for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i)
-      }
-      byteArrays.push(new Uint8Array(byteNumbers))
-    }
-
-    const blob = new Blob(byteArrays, { type: contentType })
-    const biz = integrationsStore.whatsappDetails?.business_whatsapp_number || 'whatsapp'
-    const safeBiz = biz.replace(/[^a-z0-9_-]/gi, '_')
-    const filename = `${safeBiz}_wp_qr_code.png`
-
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-
-    showSuccess('QR code downloaded successfully (via proxy).')
-  } catch (proxyErr: any) {
-    console.error('Proxy download failed:', proxyErr)
+    await integrationsStore.downloadQrCode()
+  } catch (error) {
+    console.error('Download failed:', error)
     showError('Error downloading QR code, please try again.')
-  } finally {
-    isDownloading.value = false
   }
 }
 
