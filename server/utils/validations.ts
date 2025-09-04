@@ -116,6 +116,39 @@ export const uploadBulkUserValidation = z.object({
     }),
 })
 
+// WhatsApp Business Account validation schema
+export const businessWhatsAppAccount = z.object({
+  business_whatsapp_number: z
+    .string()
+    .trim()
+    .min(1, 'Business WhatsApp number is required')
+    .refine((value) => value.startsWith('+'), {
+      message: 'The WhatsApp number must start with a "+" followed by the country code (e.g., +1 for USA, +91 for India).'
+    })
+    .refine(
+      (value) => {
+        const phoneNumber = parsePhoneNumberFromString(value)
+        return phoneNumber?.isValid() ?? false
+      },
+      {
+        message: 'The WhatsApp number is not valid. Please include a valid country code and number.'
+      }
+    ),
+  permanent_access_token: z
+    .string()
+    .trim()
+    .min(1, 'Permanent access token is required'),
+  app_id: z
+    .string()
+    .trim()
+    .min(1, 'App ID is required'),
+  app_secret_key: z
+    .string()
+    .trim()
+    .min(1, 'App secret key is required')
+})
+
 export type SigninData = z.infer<typeof SigninValidation>
 export type SignupData = z.infer<typeof SignupValidation>
 export type GoogleSignupData = z.infer<typeof GoogleSignupValidation>
+export type BusinessWhatsAppAccountData = z.infer<typeof businessWhatsAppAccount>

@@ -10,17 +10,13 @@
         </p>
       </div>
       <div class="flex items-center space-x-3">
-        <button
-          @click="openBulkUplaod"
-          class="bg-dark-800 hover:bg-dark-700 text-white px-4 py-2 rounded-lg border border-dark-700 transition-colors flex items-center space-x-2"
-        >
+        <button @click="openBulkUplaod"
+          class="bg-dark-800 hover:bg-dark-700 text-white px-4 py-2 rounded-lg border border-dark-700 transition-colors flex items-center space-x-2">
           <UIcon name="i-heroicons-cloud-arrow-up" class="w-4 h-4" />
           <span>Bulk Upload</span>
         </button>
-        <button
-          @click="openAddUserModal"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-        >
+        <button @click="openAddUserModal"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
           <UIcon name="i-heroicons-plus" class="w-4 h-4" />
           <span>Add User</span>
         </button>
@@ -91,34 +87,25 @@
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <UIcon name="i-heroicons-magnifying-glass" class="h-5 w-5 text-gray-400" />
             </div>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search users..."
-              class="block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            />
+            <input v-model="searchQuery" type="text" placeholder="Search users..."
+              class="block w-full pl-10 pr-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
           </div>
         </div>
 
         <!-- Role Filter -->
         <div class="sm:w-48">
-          <select
-            v-model="selectedRole"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          >
+          <select v-model="selectedRole"
+            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
             <option value="">All Roles</option>
             <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
             <option value="user">User</option>
           </select>
         </div>
 
         <!-- Status Filter -->
         <div class="sm:w-48">
-          <select
-            v-model="selectedStatus"
-            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          >
+          <select v-model="selectedStatus"
+            class="block w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -147,23 +134,15 @@
       <div v-else-if="error" class="p-8 text-center">
         <UIcon name="i-heroicons-exclamation-triangle" class="w-12 h-12 text-red-400 mx-auto" />
         <p class="text-red-400 mt-2">Failed to load users</p>
-        <button
-          @click="loadUsers"
-          class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
+        <button @click="loadUsers"
+          class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
           Retry
         </button>
       </div>
 
       <!-- Table Content -->
       <div v-else>
-        <UTable
-          :columns="columns"
-          :rows="paginatedUsers"
-          :sort="sort"
-          @sort="(s) => (sort = s)"
-          class="text-white"
-        >
+        <UTable :columns="columns" :rows="paginatedUsers" class="text-white">
           <!-- Custom cells -->
           <template #name-data="{ row }">
             <div class="flex items-center">
@@ -171,8 +150,20 @@
                 <span class="text-blue-400 font-medium text-sm">{{ row.initials }}</span>
               </div>
               <div class="ml-3">
-                <div class="text-sm font-medium text-white">{{ row.name }}</div>
-                <div class="text-sm text-gray-400">{{ row.username }}</div>
+                <div class="text-sm font-medium text-white flex items-center gap-2">
+                  {{ row.name }}
+                  <UBadge v-if="row.id === authUser?.user_id" size="xs" class="bg-custom1-300 text-[10px]"
+                    :ui="{ rounded: 'rounded-full' }">
+                    Self
+                  </UBadge>
+
+                  <!-- Primary badge -->
+                  <UBadge v-if="row.primaryContact" size="xs" class="bg-custom1-300 text-[10px]"
+                    :ui="{ rounded: 'rounded-full' }">
+                    Primary
+                  </UBadge>
+                </div>
+                <!-- <div class="text-sm text-gray-400">{{ row.username }}</div> -->
               </div>
             </div>
           </template>
@@ -183,33 +174,23 @@
           </template>
 
           <template #role-data="{ row }">
-            <span
-              class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
-              :class="{
-                'bg-purple-500/20 text-purple-400': row.role === 'admin',
-                'bg-blue-500/20 text-blue-400': row.role === 'manager',
-                'bg-gray-500/20 text-gray-400': row.role === 'user',
-              }"
-            >
+            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full" :class="{
+              'bg-purple-500/20 text-purple-400': row.role === 'admin',
+              'bg-gray-500/20 text-gray-400': row.role === 'user',
+            }">
               {{ row.role }}
             </span>
           </template>
 
           <template #status-data="{ row }">
-            <span
-              class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
-              :class="{
-                'bg-green-500/20 text-green-400': row.status === 'active',
-                'bg-red-500/20 text-red-400': row.status === 'inactive',
-              }"
-            >
-              <div
-                class="w-1.5 h-1.5 rounded-full mr-1"
-                :class="{
-                  'bg-green-400': row.status === 'active',
-                  'bg-red-400': row.status === 'inactive',
-                }"
-              ></div>
+            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full" :class="{
+              'bg-green-500/20 text-green-400': row.status === 'active',
+              'bg-red-500/20 text-red-400': row.status === 'inactive',
+            }">
+              <div class="w-1.5 h-1.5 rounded-full mr-1" :class="{
+                'bg-green-400': row.status === 'active',
+                'bg-red-400': row.status === 'inactive',
+              }"></div>
               {{ row.status }}
             </span>
           </template>
@@ -220,34 +201,20 @@
 
           <template #actions-data="{ row }">
             <div class="flex items-center space-x-2">
-              <button
-                @click="editUser(row)"
-                class="text-blue-400 hover:text-blue-300 transition-colors"
-                title="Edit user"
-              >
+              <button @click="editUser(row)" class="text-blue-400 hover:text-blue-300 transition-colors"
+                title="Edit user">
                 <UIcon name="i-heroicons-pencil" class="w-4 h-4" />
               </button>
-              <button
-                @click="deleteUser(row)"
-                class="text-red-400 hover:text-red-300 transition-colors"
-                title="Delete user"
-              >
+              <button @click="deleteUser(row)" class="text-red-400 hover:text-red-300 transition-colors"
+                title="Delete user">
                 <UIcon name="i-heroicons-trash" class="w-4 h-4" />
               </button>
             </div>
           </template>
         </UTable>
         <div class="p-4 flex justify-end border-t border-dark-700">
-          <UPagination
-            v-model="page"
-            :total="sortedRows.length"
-            :page-count="pageSize"
-            :show-first="true"
-            :show-last="true"
-            :show-edges="true"
-            size="sm"
-            color="blue"
-          />
+          <UPagination v-model="page" :total="sortedRows.length" :page-count="pageSize" :show-first="true"
+            :show-last="true" :show-edges="true" size="sm" color="blue" />
         </div>
       </div>
     </div>
@@ -269,62 +236,39 @@
         <UForm :state="userForm" :schema="userSchema" @submit="saveUser" class="space-y-4">
           <!-- Name -->
           <UFormGroup label="Name" name="name" required>
-            <UInput
-              v-model="userForm.name"
-              type="text"
-              placeholder="Enter full name"
-              :ui="{
-                base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
-                padding: { sm: 'p-3' },
-              }"
-            />
+            <UInput v-model="userForm.name" type="text" placeholder="Enter full name" :ui="{
+              base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
+              padding: { sm: 'p-3' },
+            }" />
           </UFormGroup>
 
           <!-- Email -->
           <UFormGroup label="Email" name="email" required>
-            <UInput
-              v-model="userForm.email"
-              type="email"
-              placeholder="Enter email address"
-              :ui="{
-                base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
-                padding: { sm: 'p-3' },
-              }"
-            />
+            <UInput v-model="userForm.email" type="email" placeholder="Enter email address" :ui="{
+              base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
+              padding: { sm: 'p-3' },
+            }" />
           </UFormGroup>
 
           <!-- Phone -->
           <UFormGroup name="phone" label="Phone Number">
-            <LibVueTelInput
-              ref="phoneRef"
-              :prop-phone="userForm.phone"
-              placeholder="Your phone number"
-              defaultCountry="us"
-            />
+            <LibVueTelInput ref="phoneRef" :prop-phone="userForm.phone" placeholder="Your phone number"
+              defaultCountry="us" />
           </UFormGroup>
 
           <!-- Role -->
-          <UFormGroup label="Role" name="role" required>
-            <USelect
-              v-model="userForm.role"
-              :options="roleOptions"
-              option-attribute="label"
-              value-attribute="value"
-              placeholder="Select Role"
-              :ui="{
+          <UFormGroup label="Role" name="role_id" required>
+            <USelect v-model="userForm.role_id" :options="roleOptions" option-attribute="label" value-attribute="value"
+              placeholder="Select Role" :ui="{
                 base: 'w-full px-3 py-3 border border-dark-700 rounded-lg bg-dark-900 text-white focus:outline-none focus:ring-2 focus:ring-blue-500',
                 padding: { sm: 'p-3' },
-              }"
-            />
+              }" />
           </UFormGroup>
 
           <!-- Primary Contact -->
           <UFormGroup name="primaryContact">
-            <UCheckbox
-              v-model="userForm.primaryContact"
-              label="Make Primary Contact"
-              :ui="{ base: 'rounded bg-dark-900 border-dark-700' }"
-            />
+            <UCheckbox v-model="userForm.primaryContact" label="Make Primary Contact"
+              :ui="{ base: 'rounded bg-dark-900 border-dark-700' }" @click="handlePrimaryContactToggle" />
           </UFormGroup>
 
           <!-- Active Status -->
@@ -338,27 +282,16 @@
 
           <!-- Buttons -->
           <div class="flex space-x-3 pt-4">
-            <UButton
-              type="button"
-              @click="closeUserModal"
-              label="Cancel"
-              color="gray"
-              class="flex-1 px-3 py-3 justify-center"
-            />
-            <UButton
-              type="submit"
-              :loading="isEditMode ? updatingUser : addingUser"
-              :label="
-                isEditMode
-                  ? updatingUser
-                    ? 'Saving...'
-                    : 'Save Changes'
-                  : addingUser
-                    ? 'Adding...'
-                    : 'Add User'
-              "
-              class="flex-1 px-3 py-3 justify-center"
-            />
+            <UButton type="button" @click="closeUserModal" label="Cancel" color="gray"
+              class="flex-1 px-3 py-3 justify-center" />
+            <UButton type="submit" :loading="isEditMode ? updatingUser : addingUser" :label="isEditMode
+              ? updatingUser
+                ? 'Saving...'
+                : 'Save Changes'
+              : addingUser
+                ? 'Adding...'
+                : 'Add User'
+              " class="flex-1 px-3 py-3 justify-center" />
           </div>
         </UForm>
       </UCard>
@@ -373,48 +306,51 @@
 
         <p class="text-gray-300 mb-6">
           Are you sure you want to delete
-          <span class="font-semibold">{{ selectedUser?.name }}</span
-          >?<br />
+          <span class="font-semibold">{{ selectedUser?.name }}</span>?<br />
           They will no longer have access but their data will remain in the system.
         </p>
 
         <div class="flex space-x-3">
-          <UButton
-            @click="showDeleteUserModal = false"
-            label="Cancel"
-            color="gray"
-            class="flex-1 px-3 py-3 justify-center"
-          />
-          <UButton
-            @click="confirmDelete"
-            :loading="deletingUser"
-            label="Delete"
-            color="red"
-            class="flex-1 px-3 py-3 justify-center"
-          />
+          <UButton @click="showDeleteUserModal = false" label="Cancel" color="gray"
+            class="flex-1 px-3 py-3 justify-center" />
+          <UButton @click="confirmDelete" :loading="deletingUser" label="Delete" color="red"
+            class="flex-1 px-3 py-3 justify-center" />
+        </div>
+      </UCard>
+    </UModal>
+
+    <!-- Confirm Primary COntact -->
+    <UModal v-model="showPrimaryContactConfirm">
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold text-white">Confirm Primary Contact</h3>
+        </template>
+        <p class="text-gray-300 mb-6">{{ primaryContactConfirmMessage }}</p>
+        <div class="flex space-x-3">
+          <UButton @click="
+            () => {
+              showPrimaryContactConfirm = false
+              pendingPrimaryContactChange = false
+            }
+          " label="Cancel" color="gray" class="flex-1 px-3 py-3 justify-center" />
+          <UButton @click="confirmPrimaryContactChange" label="Confirm" color="blue"
+            class="flex-1 px-3 py-3 justify-center" />
         </div>
       </UCard>
     </UModal>
 
     <!-- Bulk Upload Modal -->
 
-    <UModal
-      v-model="showForm2"
-      prevent-close
-      class="custom-modal"
-      :ui="{
-        width: 'sm:max-w-3xl xl:max-w-4xl',
-        base: 'max-h-[90vh] overflow-y-auto',
-      }"
-    >
-      <UCard
-        :ui="{
-          base: 'h-full flex flex-col',
-          rounded: '',
-          divide: 'divide-y divide-gray-100 dark:divide-gray-800',
-          body: { base: 'grow' },
-        }"
-      >
+    <UModal v-model="showForm2" prevent-close class="custom-modal" :ui="{
+      width: 'sm:max-w-3xl xl:max-w-4xl',
+      base: 'max-h-[90vh] overflow-y-auto',
+    }">
+      <UCard :ui="{
+        base: 'h-full flex flex-col',
+        rounded: '',
+        divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+        body: { base: 'grow' },
+      }">
         <!-- Modal Header -->
         <template #header>
           <div class="flex items-center justify-between">
@@ -422,20 +358,12 @@
               Upload Bulk Users
             </h3>
             <div class="flex items-center space-x-2">
-              <UButton
-                @click="downloadCsv"
-                icon="i-heroicons:cloud-arrow-down-16-solid"
-                class="download-csv-template-btn text-white bg-custom1-400 hover:bg-custom1-500 focus:outline-none"
-              >
+              <UButton @click="downloadCsv" icon="i-heroicons:cloud-arrow-down-16-solid"
+                class="download-csv-template-btn text-white bg-custom1-400 hover:bg-custom1-500 focus:outline-none">
                 Download CSV Template
               </UButton>
-              <UButton
-                color="gray"
-                variant="ghost"
-                icon="i-heroicons-x-mark-20-solid"
-                class="-my-1"
-                @click="closePreviewForm"
-              />
+              <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark-20-solid" class="-my-1"
+                @click="closePreviewForm" />
             </div>
           </div>
         </template>
@@ -445,24 +373,14 @@
           <!-- File Upload Section -->
           <div
             class="drag-area border-dashed border-2 border-gray-300 rounded-md p-6 flex flex-col items-center justify-center cursor-pointer"
-            @dragover.prevent
-            @dragenter.prevent
-            @drop="handleFileDrop"
-            @click="triggerFileInput"
-          >
+            @dragover.prevent @dragenter.prevent @drop="handleFileDrop" @click="triggerFileInput">
             <p class="text-gray-500">Drag and drop a file here or Click to select a file</p>
             <p class="text-sm text-gray-400 mt-2">Supported file types: CSV files only</p>
             <p class="text-sm text-gray-400 mt-2">
               Note: The WhatsApp number should start with the country code, followed by a valid
               number without any spaces.
             </p>
-            <input
-              type="file"
-              ref="fileInput"
-              class="hidden"
-              @change="handleFileInput"
-              accept=".csv"
-            />
+            <input type="file" ref="fileInput" class="hidden" @change="handleFileInput" accept=".csv" />
           </div>
 
           <!-- File Preview Section -->
@@ -478,12 +396,8 @@
             <UButton @click="closePreviewForm" class="bg-gray-300 hover:bg-gray-400 rounded">
               Cancel
             </UButton>
-            <UButton
-              type="button"
-              :disabled="errors.length > 0 || !selectedFile"
-              @click="handleUpload"
-              class="bg-custom1-400 text-white hover:bg-custom1-500 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <UButton type="button" :disabled="errors.length > 0 || !selectedFile" @click="handleUpload"
+              class="bg-custom1-400 text-white hover:bg-custom1-500 rounded disabled:opacity-50 disabled:cursor-not-allowed">
               Upload
             </UButton>
           </div>
@@ -496,6 +410,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { z } from 'zod'
+
 // Types
 interface ApiUser {
   user_id: string
@@ -520,6 +435,7 @@ interface MappedUser {
   name: string
   email: string
   phone: string
+  role_id: number
   role: string
   status: string
   initials: string
@@ -527,6 +443,7 @@ interface MappedUser {
   lastActive: string
   created: string
   tokensUsed: number
+  source: string
   primaryContact?: boolean
   isActive?: boolean
 }
@@ -539,11 +456,11 @@ interface UserStats {
 }
 
 interface UserForm {
-  id?: string
+  user_id?: string
   name: string
   email: string
   phone: string
-  role: string
+  role_id?: number
   primaryContact: boolean
   isActive: boolean
 }
@@ -556,6 +473,9 @@ definePageMeta({
 // Store
 const usersStore = useUsersStore()
 const profileStore = useProfileStore()
+const authStore = useAuthStore()
+
+const authUser = computed(() => authStore.getAuthUser)
 
 // Reactive state
 const phoneRef = ref(null)
@@ -576,12 +496,25 @@ const usersList = ref<MappedUser[]>([])
 const selectedUser = ref<MappedUser | null>(null)
 const isEditMode = ref(false)
 
+const showPrimaryContactConfirm = ref(false)
+const pendingPrimaryContactChange = ref(false)
+const primaryContactConfirmMessage = ref('')
+const isPrimaryContactConfirming = ref(false)
+
+const confirmPrimaryContactChange = async () => {
+  userForm.primaryContact = true
+  showUserModal.value = true
+  showPrimaryContactConfirm.value = false
+  pendingPrimaryContactChange.value = false
+  isPrimaryContactConfirming.value = false
+}
+
 const userForm = reactive<UserForm>({
-  id: '',
+  user_id: '',
   name: '',
   email: '',
   phone: '',
-  role: '',
+  role_id: 2, // default to 'user'
   primaryContact: false,
   isActive: true,
 })
@@ -596,6 +529,7 @@ const columns = [
   { key: 'status', label: 'Status', sortable: true },
   { key: 'lastActive', label: 'Last Active', sortable: true },
   { key: 'created', label: 'Created', sortable: true },
+  { key: 'source', label: 'Source', sortable: true },
   { key: 'tokensUsed', label: 'Tokens Used', sortable: true },
   { key: 'actions', label: 'Actions' },
 ]
@@ -606,24 +540,26 @@ const sort = ref<{ column: string; direction: 'asc' | 'desc' | null }>({
 })
 
 const sortedRows = computed(() => {
-  if (!sort.value.column || !sort.value.direction) return rows.value
+  if (!sort.value.column || !sort.value.direction) return filteredUsers.value
 
-  return [...rows.value].sort((a, b) => {
+  return [...filteredUsers.value].sort((a, b) => {
     const col = sort.value.column as keyof typeof a
     const dir = sort.value.direction === 'asc' ? 1 : -1
 
-    if (a[col] < b[col]) return -1 * dir
-    if (a[col] > b[col]) return 1 * dir
+    let aVal = a[col]
+    let bVal = b[col]
+
+    // Case-insensitive string comparison
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      aVal = aVal.toLowerCase()
+      bVal = bVal.toLowerCase()
+    }
+
+    if (aVal < bVal) return -1 * dir
+    if (aVal > bVal) return 1 * dir
     return 0
   })
 })
-
-const rows = computed(() =>
-  filteredUsers.value.map((user) => ({
-    ...user,
-    contact: `${user.email} \n ${user.phone}`,
-  })),
-)
 
 const page = ref(1)
 const pageSize = ref(5) // rows per page
@@ -631,19 +567,36 @@ const pageSize = ref(5) // rows per page
 const paginatedUsers = computed(() => {
   const start = (page.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return filteredUsers.value.slice(start, end)
+  return sortedRows.value.slice(start, end)
 })
 
-const roleOptions = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'user', label: 'User' },
-]
+const roleOptions = computed(() => {
+
+  const superAdmin = [{ value: 0, label: 'Super Admin' }]
+
+  const mappedRoles = usersStore.roles.map((role: any) => ({
+    value: role.role_id,
+    label: role.role_name,
+  }))
+
+  if (authUser.value?.role_id === 0) {
+    return [...superAdmin, ...mappedRoles]
+  } else {
+    return mappedRoles
+  }
+})
+
+watch([selectedRole, selectedStatus, searchQuery], () => {
+  page.value = 1
+})
 
 const userSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().nonempty('Name is required')
+    .min(5, 'Name should be at least 5 characters long'),
   email: z.string().email('Invalid email address'),
-  role: z.string().min(1, 'Role is required'),
+  role_id: z.union([z.string(), z.number()]).refine((val) => val !== '', {
+    message: 'Role is required',
+  }),
   primaryContact: z.boolean().optional(), // optional
   isActive: z.boolean().default(true),
 })
@@ -675,17 +628,19 @@ const stats = computed<UserStats>(() => {
 })
 
 const filteredUsers = computed(() => {
-  return usersList.value.filter((user) => {
-    const matchesSearch =
-      !searchQuery.value ||
-      user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return usersList.value
+    .filter((user) => user.role.toLowerCase() !== 'super admin')
+    .filter((user) => {
+      const matchesSearch =
+        !searchQuery.value ||
+        user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
 
-    const matchesRole = !selectedRole.value || user.role === selectedRole.value
-    const matchesStatus = !selectedStatus.value || user.status === selectedStatus.value
+      const matchesRole = !selectedRole.value || user.role === selectedRole.value
+      const matchesStatus = !selectedStatus.value || user.status === selectedStatus.value
 
-    return matchesSearch && matchesRole && matchesStatus
-  })
+      return matchesSearch && matchesRole && matchesStatus
+    })
 })
 
 // Helper functions
@@ -719,8 +674,6 @@ const mapRole = (roleId: number, roleName?: string): string => {
   const roleMap: { [key: number]: string } = {
     1: 'admin',
     2: 'user',
-    3: 'manager',
-    4: 'user',
   }
   return roleMap[roleId] || 'user'
 }
@@ -730,6 +683,7 @@ const mapApiUserToMappedUser = (user: ApiUser): MappedUser => ({
   name: user.name,
   email: user.email,
   phone: user.contact_number || '-',
+  role_id: user.role_id,
   role: mapRole(user.role_id, user.role),
   status: user.status || 'active',
   initials: getInitials(user.name),
@@ -737,6 +691,7 @@ const mapApiUserToMappedUser = (user: ApiUser): MappedUser => ({
   lastActive: formatDate(user.updated_at),
   created: formatDate(user.added_at || user.created_at),
   tokensUsed: user.tokens_used || 0,
+  source: user.source,
   primaryContact: user.primary_contact,
   isActive: (user.status || 'active') === 'active',
 })
@@ -759,9 +714,29 @@ const loadUsers = async () => {
   }
 }
 
+const handlePrimaryContactUpdate = async () => {
+  if (!userForm.primaryContact) return
+
+  // Find current primary contact in the organization
+  const currentPrimaryContact = usersStore.users.find((u) => u.primary_contact)
+
+  // If the logged-in user is currently primary, unset them
+  if (profileStore.userProfile.primary_contact) {
+    await usersStore.editUser(profileStore.userProfile.user_id, { primary_contact: false }, true)
+  }
+  // If another user is primary, unset them
+  else if (currentPrimaryContact && currentPrimaryContact.user_id !== userForm.user_id) {
+    await usersStore.editUser(currentPrimaryContact.user_id, { primary_contact: false }, true)
+  }
+
+  // Optionally refresh profile or users list
+  await usersStore.fetchUsers()
+  await profileStore.fetchUserProfile()
+}
+
 const saveUser = async () => {
-  // Validate phone number (extra step since you're using LibVueTelInput)
   if (!validatePhoneField()) {
+    showError('Please enter a valid phone number.')
     return
   }
 
@@ -769,49 +744,48 @@ const saveUser = async () => {
   const phoneNumberWithCountryCode = phoneData?.number || userForm.phone || ''
 
   const payload = {
+    user_id: userForm.user_id,
     name: userForm.name,
     email: userForm.email,
     contact_number: phoneNumberWithCountryCode,
-    role: userForm.role,
+    role_id: userForm.role_id,
     primary_contact: userForm.primaryContact || false,
     status: userForm.isActive ? 'active' : 'inactive',
   }
-  console.log('payload', payload)
-  if (isEditMode.value && userForm.id) {
-    updatingUser.value = true
-    try {
-      await usersStore.editUser(userForm.id, payload)
-      await loadUsers()
-      showUserModal.value = false
-    } catch (err: any) {
-      console.error('Error updating user:', err)
-      error.value = usersStore.getUserError || 'Failed to update user'
-    } finally {
-      updatingUser.value = false
+
+  updatingUser.value = true
+  try {
+    let result
+
+    if (isEditMode.value && userForm.primaryContact) {
+      await handlePrimaryContactUpdate()
     }
-  } else {
-    addingUser.value = true
-    try {
-      await usersStore.createUser(payload)
-      await loadUsers()
-      showUserModal.value = false
-      resetUserForm()
-    } catch (err: any) {
-      console.error('Error creating user:', err)
-      error.value = usersStore.getUserError || 'Failed to create user'
-    } finally {
-      addingUser.value = false
+
+    if (isEditMode.value && userForm.user_id) {
+      result = await usersStore.editUser(userForm.user_id, payload)
+    } else {
+      result = await usersStore.createUser(payload)
     }
+
+    if (!result?.success) return
+
+    await loadUsers()
+    showUserModal.value = false
+  } catch (err) {
+    console.error('Unexpected error saving user:', err)
+    showError('Something went wrong while saving user')
+  } finally {
+    updatingUser.value = false
   }
 }
 
 // Reset form function
 const resetUserForm = () => {
-  userForm.id = ''
+  userForm.user_id = ''
   userForm.name = ''
   userForm.email = ''
   userForm.phone = ''
-  userForm.role = ''
+  userForm.role_id = 2
   userForm.primaryContact = false
   userForm.isActive = true
 
@@ -831,20 +805,16 @@ const openAddUserModal = () => {
 
 const openEditUserModal = async (user: any) => {
   isEditMode.value = true
-  console.log('user in edit modal', user)
-  console.log('user.phone', userForm)
 
   Object.assign(userForm, {
-    id: user.id,
+    user_id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role,
+    role_id: user.role_id,
     phone: user.phone,
     primaryContact: user.primaryContact || false,
     isActive: user.status === 'active',
   })
-
-  // Set phone in LibVueTelInput
 
   showUserModal.value = true
 }
@@ -853,7 +823,7 @@ const closeUserModal = () => {
   showUserModal.value = false
 }
 
-// Deactivate user
+// Delete user
 const confirmDelete = async () => {
   if (!selectedUser.value) return
   deletingUser.value = true
@@ -877,6 +847,25 @@ const editUser = (user: MappedUser) => {
 const deleteUser = (user: MappedUser) => {
   selectedUser.value = user
   showDeleteUserModal.value = true
+}
+
+// Handle Primary Contact Toggle
+const handlePrimaryContactToggle = () => {
+  if (userForm.primaryContact) return // already primary
+
+  const currentPrimaryContact = usersStore.users.find((u) => u.primary_contact)
+  let message = `Setting this user as Primary Contact! Do you want to continue?`
+
+  if (profileStore.userProfile.primary_contact) {
+    message = `Setting this user as Primary Contact will remove YOU from being Primary Contact. Do you want to continue?`
+  } else if (currentPrimaryContact?.user_id !== userForm.user_id) {
+    message = `Setting this user as Primary Contact will remove "${currentPrimaryContact.name}" from being Primary Contact. Do you want to continue?`
+  }
+
+  isPrimaryContactConfirming.value = true
+  pendingPrimaryContactChange.value = true
+  primaryContactConfirmMessage.value = message
+  showPrimaryContactConfirm.value = true
 }
 
 //CSV Template
@@ -925,8 +914,6 @@ const isViewMode = ref(true)
 const previewData = ref([])
 const showForm2 = ref(false)
 const viewContent = ref('')
-
-const REQUIRED_HEADERS = ['name', 'email', 'whatsapp_number']
 
 const openBulkUplaod = () => {
   showForm2.value = true
@@ -978,6 +965,10 @@ const openPreview = async (file: File) => {
       })
     })
 
+    if (!parsedData || parsedData.length === 0) {
+      throw new Error("The uploaded CSV file is empty. Please upload a file with user data.")
+    }
+
     // Render the data into a preview and display it
     previewData.value = parsedData
     showPreview.value = true
@@ -986,47 +977,30 @@ const openPreview = async (file: File) => {
     // Call validation API
     const validationResponse = await usersStore.uploadAndValidateJson(parsedData as any)
 
-    // Handle unauthorized access - REMOVED THE RETURN STATEMENT
-    if (validationResponse.message === 'Unauthorized') {
-      console.log('Unauthorized access detected')
-      showError('You are not authorized to perform this action. Please check your permissions.')
-      errors.value = [
-        {
-          errorMessage: 'Unauthorized access. Please contact administrator.',
-        },
-      ]
-      // Keep these to ensure preview shows
-      showPreview.value = true
-      isViewMode.value = false
-
-      // Render the preview without validation errors (since it's an auth error, not validation errors)
-      viewContent.value = renderCSVToHTML(parsedData)
-    }
-    // Then handle validation errors
-    else if (validationResponse.errors && validationResponse.errors.length > 0) {
-      console.log('Entering validation error branch')
-
+    if (validationResponse.errors && validationResponse.errors.length > 0) {
       errors.value = validationResponse.errors.map(
         (error: { rowNumber: number; invalidFields: any[] }) => ({
-          errorMessage: `Row: ${error.rowNumber} - ${error.invalidFields.map((field: { field: any; message: any }) => `${field.field}: ${field.message}`).join(', ')}`,
+          errorMessage: `Row: ${error.rowNumber} - ${error.invalidFields
+            .map((field: { field: any; message: any }) => `${field.field}: ${field.message}`)
+            .join(', ')}`,
           rowIndex: error.rowNumber - 1,
           invalidFields: error.invalidFields,
         }),
       )
 
       // Show toast for each error
-      validationResponse.errors.forEach((error: { rowNumber: any; invalidFields: any[] }) => {
-        const errorMessage = `Row: ${error.rowNumber} - ${error.invalidFields.map((field: { field: any; message: any }) => `${field.field}: ${field.message}`).join(', ')}`
-        showError(errorMessage)
+      validationResponse.errors.forEach((error: { rowNumber: number; invalidFields: any[] }) => {
+        error.invalidFields.forEach((field: { field: any; message: any }) => {
+          const errorMessage = `Row: ${error.rowNumber} - ${field.field}: ${field.message}`
+          showError(errorMessage)
+        })
       })
 
-      // Extract error row indices
       const errorRows = validationResponse.errors.map(
         (error: { rowNumber: number }) => error.rowNumber - 1,
       )
 
-      // Map errors by row index for correct table rendering
-      const errorMessages = {}
+      const errorMessages: Record<number, { field: string; message: string }[]> = {}
       validationResponse.errors.forEach((error: { rowNumber: number; invalidFields: any[] }) => {
         errorMessages[error.rowNumber - 1] = error.invalidFields.map(
           (field: { field: any; message: any }) => ({
@@ -1041,25 +1015,25 @@ const openPreview = async (file: File) => {
       showPreview.value = true
       isViewMode.value = true
     } else {
-      console.log('Entering success branch')
       userPreview.value = validationResponse?.data
       isViewMode.value = false
       showForm2.value = true
       viewContent.value = renderCSVToHTML(parsedData)
     }
-  } catch (error) {
-    console.log('Caught error:', error)
-    const errorMsg = error.message || 'An error occurred while validating the file'
-    showError('An error occurred while importing the Users: ' + errorMsg)
+  } catch (error: any) {
+    const errorMsg =
+      error.message === "The uploaded CSV file is empty. Please upload a file with user data."
+        ? error.message
+        : "An error occurred while validating the file. Please check your CSV and try again."
+
+    showError(errorMsg)
     errors.value = [
       {
         errorMessage: errorMsg,
       },
     ]
-    // Ensure preview shows even on unexpected errors
-    showPreview.value = true
+    showPreview.value = false   // don’t show preview for errors
     isViewMode.value = false
-    // Render basic preview without validation highlights
     viewContent.value = renderCSVToHTML(previewData.value)
   }
 }
@@ -1138,8 +1112,9 @@ const closePreviewForm = () => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   loadUsers()
+  await usersStore.fetchRoles()
 })
 
 useHead({
@@ -1267,15 +1242,18 @@ useHead({
 }
 
 select option {
-  background-color: #1e293b; /* dark background */
-  color: #e2e8f0; /* light text */
+  background-color: #1e293b;
+  /* dark background */
+  color: #e2e8f0;
+  /* light text */
   padding: 10px;
 }
 
 /* Hover/selected states (for browsers that support it) */
 select option:hover,
 select option:checked {
-  background-color: #3b82f6; /* blue */
+  background-color: #3b82f6;
+  /* blue */
   color: white;
 }
 </style>

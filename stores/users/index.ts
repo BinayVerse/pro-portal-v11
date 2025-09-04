@@ -103,7 +103,7 @@ export const useUsersStore = defineStore('usersStore', {
     async fetchRoles() {
       this.loading = true
       try {
-        const data = await $fetch<{ data: any[] }>('/api/organization/roles', {
+        const data = await $fetch<{ data: any[] }>('/api/users/roles', {
           headers: this.getAuthHeaders(),
         })
         this.roles = data.data || []
@@ -138,16 +138,38 @@ export const useUsersStore = defineStore('usersStore', {
     async createUser(user: Partial<OrganizationUser>) {
       this.loading = true
       try {
-        await $fetch('/api/users/create', {
-          method: 'POST' as any,
-          body: user,
-          headers: this.getAuthHeaders(),
-        })
+        const response = await $fetch<{ status?: boolean; message?: string; errors?: any[] }>(
+          '/api/users/create',
+          {
+            method: 'POST',
+            body: user,
+            headers: this.getAuthHeaders(),
+          }
+        )
+
+        // If API explicitly returns failure (like 409 conflict, validation error, etc.)
+        if (response?.status === false) {
+          const message = response.message || 'Error creating user'
+          this.userError = message
+          this.handleError({ message }, message)
+          return { success: false, message, errors: response.errors || [] }
+        }
+
         this.handleSuccess('User added successfully!')
         await this.fetchUsers()
+        return { success: true, message: 'User added successfully!' }
       } catch (err: any) {
-        if (!this.handleAuthError(err)) {
-          this.userError = this.handleError(err, 'Error creating user')
+        const isAuthError = await this.handleAuthError(err)
+        if (isAuthError) {
+          return { success: false, message: 'Unauthorized', errors: [] }
+        }
+
+        const message = this.handleError(err, 'Error creating user')
+        this.userError = message
+        return {
+          success: false,
+          message,
+          errors: err?.response?.data?.errors || [],
         }
       } finally {
         this.loading = false
@@ -156,17 +178,38 @@ export const useUsersStore = defineStore('usersStore', {
 
     async editUser(id: string, user: Partial<OrganizationUser>, silent = false) {
       try {
-        await $fetch(`/api/users/${id}`, {
-          method: 'PUT',
-          body: user,
-          headers: this.getAuthHeaders(),
-        })
+        const response = await $fetch<{ status?: boolean; message?: string; errors?: any[] }>(
+          `/api/users/${id}`,
+          {
+            method: 'PUT',
+            body: user,
+            headers: this.getAuthHeaders(),
+          }
+        )
+
+        // If API explicitly returns failure (e.g., validation error, conflict, etc.)
+        if (response?.status === false) {
+          const message = response.message || 'Error editing user'
+          this.userError = message
+          this.handleError({ message }, message)
+          return { success: false, message, errors: response.errors || [] }
+        }
 
         if (!silent) this.handleSuccess('User edited successfully!')
         await this.fetchUsers()
+        return { success: true, message: 'User edited successfully!' }
       } catch (err: any) {
-        if (!this.handleAuthError(err)) {
-          this.userError = this.handleError(err, 'Error editing user')
+        const isAuthError = await this.handleAuthError(err)
+        if (isAuthError) {
+          return { success: false, message: 'Unauthorized', errors: [] }
+        }
+
+        const message = this.handleError(err, 'Error editing user')
+        this.userError = message
+        return {
+          success: false,
+          message,
+          errors: err?.response?.data?.errors || [],
         }
       }
     },
@@ -221,27 +264,38 @@ export const useUsersStore = defineStore('usersStore', {
         const data = await $fetch<{
           status: boolean
           message: string
-          data?: any // Add data property
+          data?: any
           errors?: any[]
         }>('/api/users/upload-json', {
-          method: 'POST' as any,
+          method: 'POST',
           body: jsonData,
           headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
         })
 
-        // Return the data property if it exists
         return {
           status: data.status,
           message: data.message,
-          data: data.data, // Add this line
+          data: data.data || null,
           errors: data.errors || [],
         }
       } catch (err: any) {
-        if (!this.handleAuthError(err)) {
-          const message = this.handleError(err, 'Error validating JSON')
-          return { status: false, message, errors: err?.response?.data?.errors || [] }
+        // 🔎 If it's a validation error (422), unwrap and return cleanly
+        if (err?.response?.status === 422 && err?.response?._data) {
+          const data = err.response._data
+          return {
+            status: false,
+            message: data.message || 'Validation failed',
+            data: null,
+            errors: data.errors || [],
+          }
         }
-        return { status: false, message: 'Unauthorized', errors: [] }
+
+        if (this.handleAuthError(err)) {
+          return { status: false, message: 'Unauthorized', errors: [] }
+        }
+
+        const message = this.handleError(err, 'Error validating JSON')
+        return { status: false, message, errors: [] }
       } finally {
         this.userLoading = false
       }
