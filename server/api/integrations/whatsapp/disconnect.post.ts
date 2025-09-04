@@ -35,19 +35,15 @@ export default defineEventHandler(async (event) => {
             throw new CustomError('Organization not found.', 404)
         }
 
-        // Update WhatsApp status to false and clear sensitive data
+        // Delete meta_app_details row for this organization (remove WhatsApp app record)
         await query(
-            `UPDATE public.meta_app_details 
-             SET whatsapp_status = false,
-                 access_token = NULL,
-                 app_secret = NULL
-             WHERE org_id = $1;`,
+            `DELETE FROM public.meta_app_details WHERE org_id = $1;`,
             [orgId]
         )
 
         // Clear WhatsApp number and QR code from organizations table
         await query(
-            `UPDATE public.organizations 
+            `UPDATE public.organizations
              SET org_whatsapp_number = NULL,
                  qr_code = NULL
              WHERE org_id = $1;`,
