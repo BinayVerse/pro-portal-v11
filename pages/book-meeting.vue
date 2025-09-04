@@ -188,7 +188,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             Demo Request Submitted Successfully!
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Thank you for your interest in Provento.ai! Our team will contact you within 24 hours to
+            Thank you for your interest in provento.ai! Our team will contact you within 24 hours to
             schedule your personalized demo session.
           </p>
           <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6">
@@ -220,7 +220,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <span class="text-primary-400">Demo</span>
           </h1>
           <p class="text-xl text-gray-300">
-            See Provento.ai in action and discover how it can transform your artefact workflow
+            See provento.ai in action and discover how it can transform your artefact workflow
           </p>
         </div>
 
