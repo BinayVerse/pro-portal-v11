@@ -108,6 +108,32 @@ export const useAuthStore = defineStore("authStore", {
               localStorage.removeItem("authUser");
               localStorage.removeItem("authToken");
             }
+          } else {
+            // If localStorage doesn't have auth but a cookie exists (SSR set), try reading cookie on client
+            const tokenCookie = useCookie('auth-token');
+            if (tokenCookie?.value) {
+              token = tokenCookie.value;
+              try {
+                const response = await $fetch('/api/auth/profile', {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (response?.status === 'success') {
+                  user = response.data;
+                  // persist to localStorage for subsequent client loads
+                  try {
+                    localStorage.setItem('authToken', token);
+                    localStorage.setItem('authUser', JSON.stringify(user));
+                  } catch (e) {
+                    // ignore localStorage errors
+                  }
+                } else {
+                  // invalid token in cookie
+                  tokenCookie.value = null;
+                }
+              } catch (err) {
+                tokenCookie.value = null;
+              }
+            }
           }
         } else {
           // Server-side: try cookies
