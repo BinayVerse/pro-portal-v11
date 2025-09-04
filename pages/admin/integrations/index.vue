@@ -90,13 +90,13 @@
                   : integrationsStore.formatTokenUsage(integrationsStore.getTokenUsageToday.tokens)
               }}
             </p>
-            <p class="text-xs text-gray-500 mt-1">
+            <!-- <p class="text-xs text-gray-500 mt-1">
               {{
                 integrationsStore.isLoading
                   ? '...'
                   : integrationsStore.formatCost(integrationsStore.getTokenUsageToday.cost)
               }}
-            </p>
+            </p> -->
           </div>
           <div class="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
             <UIcon name="heroicons:bolt" class="w-6 h-6 text-orange-400" />
