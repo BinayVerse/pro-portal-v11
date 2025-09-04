@@ -62,17 +62,19 @@ export default defineEventHandler(async (event) => {
       [orgId]
     )
 
-    // Get today's messages and token usage
-    const today = dayjs.utc().format('YYYY-MM-DD')
+    // Get today's messages and token usage using explicit UTC range to avoid timezone/date conversion issues
+    const startOfTodayUtc = dayjs().utc().startOf('day').toISOString()
+    const startOfTomorrowUtc = dayjs().utc().add(1, 'day').startOf('day').toISOString()
     const tokenUsageQuery = await query(
-      `SELECT 
+      `SELECT
         COUNT(*) as messages_today,
         COALESCE(SUM(total_tokens), 0) as total_tokens_today,
         COALESCE(SUM(total_cost), 0) as total_cost_today
-      FROM token_cost_calculation 
-      WHERE org_id = $1 
-      AND DATE(created_at) = $2`,
-      [orgId, today]
+      FROM token_cost_calculation
+      WHERE org_id = $1
+      AND created_at >= $2
+      AND created_at < $3`,
+      [orgId, startOfTodayUtc, startOfTomorrowUtc]
     )
 
     // Get total token usage (all time)
